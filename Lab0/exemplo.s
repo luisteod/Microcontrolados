@@ -196,8 +196,27 @@ Start
 
 	
 	LDR R0, =STRING1
-		
-		
+
+next_char
+	LDRB R1,[R0]
+	
+	CMP R1,#0
+	BEQ fim
+	
+	MOV R2, #0x41
+compare
+	CMP R1, R2
+	BEQ count
+	ADD R2,#1
+	CMP R2,#0x5B	
+	BMI compare	;Equanto não acabar o alfabeto, compare
+	
+	ADD R0, #1	;Endereço do próx byte
+	B next_char
+	
+count
+	
+fim
 	NOP
 	
 STRING1 DCB "PARATUDO", 0	
