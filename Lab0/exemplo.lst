@@ -1,0 +1,205 @@
+
+
+
+ARM Macro Assembler    Page 1 
+
+
+    1 00000000         ; Exemplo.s
+    2 00000000         ; Desenvolvido para a placa EK-TM4C1294XL
+    3 00000000         ; Prof. Guilherme Peron
+    4 00000000         ; 12/03/2018
+    5 00000000         
+    6 00000000         ; ------------------------------------------------------
+                       -------------------------
+    7 00000000                 THUMB                        ; Instruções do tip
+                                                            o Thumb-2
+    8 00000000         ; ------------------------------------------------------
+                       -------------------------
+    9 00000000         ; Declarações EQU - Defines
+   10 00000000         ;<NOME>         EQU <VALOR>
+   11 00000000         ; ------------------------------------------------------
+                       -------------------------
+   12 00000000         ; Área de Dados - Declarações de variáveis
+   13 00000000                 AREA             DATA, ALIGN=2
+   14 00000000         ; Se alguma variável for chamada em outro arquivo
+   15 00000000         ;EXPORT  <var> [DATA,SIZE=<tam>]   ; Permite chamar a va
+                       riável <var> a 
+   16 00000000         ; partir de outro arquivo
+   17 00000000         ;<var> SPACE <tam>                        ; Declara uma 
+                       variável de nome <var>
+   18 00000000         ; de <tam> bytes a partir da primeira 
+   19 00000000         ; posição da RAM  
+   20 00000000         
+   21 00000000         ; ------------------------------------------------------
+                       -------------------------
+   22 00000000         ; Área de Código - Tudo abaixo da diretiva a seguir será
+                        armazenado na memória de 
+   23 00000000         ;                  código
+   24 00000000                 AREA             |.text|, CODE, READONLY, ALIGN=
+2
+   25 00000000         
+   26 00000000         ; Se alguma função do arquivo for chamada em outro arqui
+                       vo 
+   27 00000000                 EXPORT           Start       ; Permite chamar a 
+                                                            função Start a part
+                                                            ir de 
+   28 00000000         ; outro arquivo. No caso startup.s
+   29 00000000         
+   30 00000000         ; Se chamar alguma função externa 
+   31 00000000         ;IMPORT <func>              ; Permite chamar dentro dest
+                       e arquivo uma 
+   32 00000000         ; função <func>
+   33 00000000         
+   34 00000000         ; ------------------------------------------------------
+                       -------------------------
+   35 00000000         ; Função main()
+   36 00000000         Start
+   37 00000000         ; Comece o código aqui <================================
+                       ======================
+   38 00000000         ;MOV R0, #65
+   39 00000000         ;MOV R1, #0x1B001B00
+   40 00000000         ;;Salvar no registrador R2 o valor 0x1234.5678
+   41 00000000         ;MOV R2, #0x5678
+   42 00000000         ;MOVT R2, #0x1234
+   43 00000000         ;;Guardar na posição de memória 0x2000.0040 o valor de R
+                       0
+
+
+
+ARM Macro Assembler    Page 2 
+
+
+   44 00000000         ;LDR R8, =0x20000040
+   45 00000000         ;STR R0, [R8]
+   46 00000000         ;;Guardar na posição de memória 0x2000.0044 o valor de R
+                       1
+   47 00000000         ;LDR R8, =0x20000044
+   48 00000000         ;STR R1, [R8]
+   49 00000000         ;;Guardar na posição de memória 0x2000.0048 o valor de R
+                       2
+   50 00000000         ;ADD R8, #4
+   51 00000000         ;STR R2, [R8]
+   52 00000000         ;;Guardar na posição de memória 0x2000.004C o número 0xF
+                       0001
+   53 00000000         ;ADD R8, #4
+   54 00000000         ;LDR R9, =0xF0001
+   55 00000000         ;STR R9, [R8]
+   56 00000000         ;;Guardar na posição de memória 0x2000.0046 o byte 0xCD,
+                        sem sobrescrever os outros bytes da WORD
+   57 00000000         ;;Ler o conteúdo da memória cuja posição 0x2000.0040 e g
+                       uardar no R7
+   58 00000000         ;;Ler o conteúdo da memória cuja posição 0x2000.0048 o g
+                       uardar R8
+   59 00000000         ;;Copiar para o R9 o conteúdo de R7.
+   60 00000000         
+   61 00000000         ;;a) Realizar a operação lógica AND do valor 0xF0 com o 
+                       valor binário
+   62 00000000         ;;01010101 e salvar o resultado em R0. Utilizar o sufixo
+                        ‘S’ para atualizar os
+   63 00000000         ;;flags.
+   64 00000000         ;MOV R0, #0xF0
+   65 00000000         ;ANDS R0, R0, #2_01010101
+   66 00000000         ;;b) Realizar a operação lógica AND do valor 11001100 bi
+                       nário com o valor
+   67 00000000         ;;binário 00110011 e salvar o resultado em R1. Utilizar 
+                       o sufixo ‘S’ para atualizar
+   68 00000000         ;;os flags.
+   69 00000000         ;MOV R0, #2_11001100
+   70 00000000         ;ANDS R1,R0, #2_00110011
+   71 00000000         ;;c) Realizar a operação lógica OR do valor 10000000 bin
+                       ário com o valor
+   72 00000000         ;;binário 00110111 e salvar o resultado em R2. Utilizar 
+                       o sufixo ‘S’ para atualizar
+   73 00000000         ;;os flags.
+   74 00000000         ;;d) Realizar a operação lógica AND do valor 0xABCDABCD 
+                       com o valor
+   75 00000000         ;;0xFFFF0000 (sem usar LDR) e salvar o resultado em R3. 
+                       Utilizar o sufixo ‘S’
+   76 00000000         ;;para atualizar os flags. Utilizar a instrução BIC.
+   77 00000000         
+   78 00000000         
+   79 00000000         ;a) Realizar o deslocamento lógico em 5 bits do número 7
+                       01 para a direita com o flag ‘S’;
+   80 00000000 F240 20BD       MOV              R0, #701
+   81 00000004 0940            LSRS             R0, R0, #5
+   82 00000006         ;b) Realizar o deslocamento lógico em 4 bits do número -
+                       32067 para a direita com o flag
+   83 00000006         ;‘S’; (Usar o MOV para o número positivo e depois NEG pa
+                       ra negativar)
+   84 00000006 F647 5043       MOV              R0, #32067
+   85 0000000A F1C0 0000       NEG              R0, R0
+
+
+
+ARM Macro Assembler    Page 3 
+
+
+   86 0000000E 0900            LSRS             R0, R0, #4
+   87 00000010         ;c) Realizar o deslocamento aritmético em 3 bits do núme
+                       ro 701 para a direita com o flag
+   88 00000010         ;‘S’;
+   89 00000010 F240 20BD       MOV              R0, #701
+   90 00000014 10C0            ASRS             R0, R0, #3
+   91 00000016         ;d) Realizar o deslocamento aritmético em 5 bits do núme
+                       ro -32067 para a direita com o
+   92 00000016         ;flag ‘S’;
+   93 00000016         ;e) Realizar o deslocamento lógico em 8 bits do número 2
+                       55 para a esquerda com o flag
+   94 00000016         ;‘S’;
+   95 00000016         ;f) Realizar o deslocamento lógico em 18 bits do número 
+                       -58982 para a esquerda com o
+   96 00000016         ;flag ‘S’;
+   97 00000016         ;g) Rotacionar em 10 bits o número 0xFABC1234;
+   98 00000016         ;h) Rotacionar em 2 bits com o carry o número 0x00004321
+                       ; (Realizar duas vezes)
+   99 00000016 BF00            NOP
+  100 00000018                 ALIGN                        ; garante que o fim
+                                                             da seção está alin
+                                                            hada 
+  101 00000018         
+  102 00000018         
+  103 00000018                 END                          ; fim do arquivo
+Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M4.fp --apcs=int
+erwork --depend=.\exemplo.d -o.\exemplo.o -IC:\Users\DAELN\Downloads\Aula-22-08
+\RTE -IC:\Keil_v5\ARM\PACK\Keil\TM4C_DFP\1.1.0\Device\Include\TM4C129 -IC:\Keil
+_v5\ARM\CMSIS\Include --predefine="__EVAL SETA 1" --predefine="__UVISION_VERSIO
+N SETA 518" --predefine="TM4C1294NCPDT SETA 1" --list=.\exemplo.lst exemplo.s
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+DATA 00000000
+
+Symbol: DATA
+   Definitions
+      At line 13 in file exemplo.s
+   Uses
+      None
+Comment: DATA unused
+1 symbol
+
+
+
+ARM Macro Assembler    Page 1 Alphabetic symbol ordering
+Relocatable symbols
+
+.text 00000000
+
+Symbol: .text
+   Definitions
+      At line 24 in file exemplo.s
+   Uses
+      None
+Comment: .text unused
+Start 00000000
+
+Symbol: Start
+   Definitions
+      At line 36 in file exemplo.s
+   Uses
+      At line 27 in file exemplo.s
+Comment: Start used once
+2 symbols
+337 symbols in table
