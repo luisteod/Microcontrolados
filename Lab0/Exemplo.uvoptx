@@ -142,7 +142,7 @@
         <Bp>
           <Number>0</Number>
           <Type>0</Type>
-          <LineNumber>185</LineNumber>
+          <LineNumber>198</LineNumber>
           <EnabledFlag>1</EnabledFlag>
           <Address>0</Address>
           <ByteObject>0</ByteObject>
@@ -158,28 +158,36 @@
         <Bp>
           <Number>1</Number>
           <Type>0</Type>
-          <LineNumber>185</LineNumber>
+          <LineNumber>200</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>666</Address>
+          <Address>556</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>Z:\home\luis\Desktop\Aula-22-08\exemplo.s</Filename>
+          <Filename>.\exemplo.s</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>\\Exemplo\exemplo.s\185</Expression>
+          <Expression>\\Exemplo\exemplo.s\200</Expression>
         </Bp>
       </Breakpoint>
       <MemoryWindow1>
         <Mm>
           <WinNumber>1</WinNumber>
           <SubType>2</SubType>
-          <ItemText>0x20000300</ItemText>
+          <ItemText>0x20000400</ItemText>
           <AccSizeX>0</AccSizeX>
         </Mm>
       </MemoryWindow1>
+      <MemoryWindow2>
+        <Mm>
+          <WinNumber>2</WinNumber>
+          <SubType>0</SubType>
+          <ItemText>0x00000000</ItemText>
+          <AccSizeX>0</AccSizeX>
+        </Mm>
+      </MemoryWindow2>
       <Tracepoint>
         <THDelay>0</THDelay>
       </Tracepoint>

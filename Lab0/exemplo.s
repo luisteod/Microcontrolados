@@ -8,6 +8,10 @@
 ; -------------------------------------------------------------------------------
 ; Declarações EQU - Defines
 ;<NOME>         EQU <VALOR>
+LettersBegin EQU 0x20000400
+LettersEnd EQU 0x20000419
+Result EQU 0x20000500
+
 ; -------------------------------------------------------------------------------
 ; Área de Dados - Declarações de variáveis
 		AREA  DATA, ALIGN=2
@@ -16,7 +20,7 @@
 		                                   ; partir de outro arquivo
 ;<var>	SPACE <tam>                        ; Declara uma variável de nome <var>
                                            ; de <tam> bytes a partir da primeira 
-                                           ; posição da RAM		
+                                           ; posição da RAM	
 
 ; -------------------------------------------------------------------------------
 ; Área de Código - Tudo abaixo da diretiva a seguir será armazenado na memória de 
@@ -30,6 +34,7 @@
 		; Se chamar alguma função externa	
         ;IMPORT <func>              ; Permite chamar dentro deste arquivo uma 
 									; função <func>
+		
 
 ; -------------------------------------------------------------------------------
 ; Função main()
@@ -187,11 +192,15 @@ Start
 	;	
 	;NOP
 	
+	
 
 	
+	LDR R0, =STRING1
+		
+		
+	NOP
 	
+STRING1 DCB "PARATUDO", 0	
     ALIGN                           ; garante que o fim da seção está alinhada 
-	
-	
 	
     END                             ; fim do arquivo
