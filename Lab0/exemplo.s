@@ -201,7 +201,7 @@ next_char
 	LDRB R1,[R0]
 	
 	CMP R1,#0
-	BEQ fim
+	BEQ fim_palavra
 	
 	MOV R2, #0x41
 compare
@@ -211,15 +211,46 @@ compare
 	CMP R2,#0x5B	
 	BMI compare	;Equanto não acabar o alfabeto, compare
 	
+count
+	;0x41 equivale 0x20000400 (LettersBegin)
+	;0x5B equivale 0x20000419 (LettersEnd)
+	SUB R3, R2, #0x41  ;R2 - (a primeira letra) dá qual a letra a ser incrementada
+	LDR R4, =LettersBegin
+	ADD R5, R4, R3
+	LDR R6, [R5]
+	ADD R6, #1
+	STRB R6 , [R5]
+	
 	ADD R0, #1	;Endereço do próx byte
 	B next_char
 	
-count
 	
-fim
+	
+fim_palavra
+	LDR R0, =LettersBegin
+	LDR R1, =LettersEnd
+	ADD R1, #1
+	MOV R2, #0 ;R2 segura o maior valor
+	
+next_letra_alfabeto
+	CMP R0, R1
+	BEQ fim_programa
+	
+	LDRB R3, [R0]
+	CMP R3, R2
+	IT CS
+		MOVCS R2, R3
+		
+	ADD R0, #1
+	B next_letra_alfabeto
+	
+fim_programa
+	LDR R4, =Result
+	STRB R2, [R4]
 	NOP
 	
-STRING1 DCB "PARATUDO", 0	
+	
+STRING1 DCB "PARANGARICOTIRRIMIRRUARO", 0
     ALIGN                           ; garante que o fim da seção está alinhada 
 	
     END                             ; fim do arquivo
