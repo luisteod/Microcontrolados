@@ -210,6 +210,7 @@ compare
 	ADD R2,#1
 	CMP R2,#0x5B	
 	BMI compare	;Equanto não acabar o alfabeto, compare
+	B fim_programa
 	
 count
 	;0x41 equivale 0x20000400 (LettersBegin)
