@@ -38,28 +38,25 @@
 		IMPORT PortP_Controle		; Permite chamar PortP_Output de outro arquivo	
 		IMPORT PortJ_Input          ; Permite chamar PortJ_Input de outro arquivo
 									
+; Decodificaçao para os displays de 7 segmentos de 0 a F
+DISPLAY_NUMBERS   DCB   0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F, 0x77, 0x7C, 0x39, 0x5E, 0x79, 0x71
 
 ; -------------------------------------------------------------------------------
 ; Função main()
 Start  		
 	BL PLL_Init                 ;Chama a subrotina para alterar o clock do microcontrolador para 80MHz
 	BL SysTick_Init
+	BL SysTick_Wait1ms
 	BL GPIO_Init                ;Chama a subrotina que inicializa os GPIO
-	
-	MOV R5, #2_00000001         ;REGISTRADOR QUE GUARDA O NUMERO ATUAL
-	MOV R6, #2_00000001			;REGISTRADOR QUE GUARDA O FATOR MULTIPLICATIVO ATUAL
 	
 	MOV R0, #2_00100000			;A saída dos leds é sempre ativa
 	BL PortP_Controle
 	
-	B PISCA_LED
-	
-	MOV R0, R5
-	BL PortA_Output				;Inicializa o número como 1
-	BL PortQ_Output				;Inicializa o fator multiplicativo como 1  i.e. 1x1
-	
+	MOV R5, #2_00000001         ;REGISTRADOR 5 QUE GUARDA O NUMERO ATUAL
+	MOV R6, #2_00000001			;REGISTRADOR 6 QUE GUARDA O FATOR MULTIPLICATIVO ATUAL  I.E 1X1
+	MUL R7, R5, R6				;REGISTRADOR 7 QUE GUARDA A MULTIPLICACAO
+
 MainLoop
-	B PISCA_LED
 	BL ATIVA_LED
 	BL PortJ_Input				;Chama a subrotina que lê o estado das chaves e coloca o resultado em R0
 	
@@ -74,23 +71,6 @@ Verifica_SW2
 	B MainLoop					;Volta pro MainLoop
 
 
-;===========================TESTE
-PISCA_LED
-	MOV R1, R6				 
-	ADD R1, #1
-	CMP R1, #2_00001010
-	ITE EQ
-		MOVEQ R6, #2_00000000
-		MOVNE R6, R1
-	MOV R0, R6				 ;Setar o parâmetro de entrada da função setando o BIT1
-	BL PortA_Output				 ;Chamar a função para acender o LED1
-	MOV R0, #500                ;Chamar a rotina para esperar 0,5s
-	BL SysTick_Wait1ms
-	MOV R0, R6					 ;Setar o parâmetro de entrada da função apagando o BIT1
-	BL PortQ_Output				 ;Chamar a rotina para apagar o LED
-	MOV R0, #500                ;Chamar a rotina para esperar 0,5
-	BL SysTick_Wait1ms	
-	B MainLoop
 ;==================================================================================================================
 MUDA_NUMERO
 	MOV R1, R5					;Coloca o número atual no registrador R1
@@ -102,6 +82,7 @@ MUDA_NUMERO
 		MOVNE R5, R1
 	
 	MOV R6, #2_00000000
+	
 	
 	B CALCULA_TABUADA			;Se o número mudar, reinicia a tabuada
 	
@@ -122,11 +103,19 @@ MUDA_FATOR
 ; Parâmetro de saída: Não tem
 ATIVA_LED
 	PUSH{LR}
-	MOV R0, #1000
-	BL SysTick_Wait1ms
+	
 	MOV R0, R5					;Manda o número atual para a saída dos LEDS
-	BL PortA_Output
-	BL PortQ_Output
+	BL PortA_Output				;A7~A4
+	
+	MOV R0, #1
+	BL SysTick_Wait1ms
+	
+	MOV R0, R5					;Manda o número atual para a saída dos LEDS
+	BL PortQ_Output				;Q3~Q0
+	
+	MOV R0, #1
+	BL SysTick_Wait1ms
+	
 	POP{LR}
 	BX LR
 
@@ -135,7 +124,7 @@ ATIVA_LED
 ; Parâmetro de entrada: R5 --> O NUMERO ATUAL, R6 --> O FATOR ATUAL
 ; Parâmetro de saída: Não tem
 CALCULA_TABUADA
-	MUL R1,R5,R6
+	MUL R7,R5,R6
 	BL CONVERT_BINARY_BCD    	;USA O VALOR DA TABUADA EM BINARIO NO R1 E DEVOLVE EM BCD NO R2
 	BL ATIVA_DISPLAY1			
 	BL ATIVA_DISPLAY2
@@ -143,16 +132,16 @@ CALCULA_TABUADA
 	
 ;--------------------------------------------------------------------------------
 ; Função CONVERT_BINARY_BCD
-; Parâmetro de entrada: R1 --> A RESPOSTA DA TABUADA EM BINARIO
-; Parâmetro de saída: R2 --> ALGARISMO MAIS SIGNIFICATIVO, R1 --> ALGARISMO MENOS SIGNIFICATIVO
+; Parâmetro de entrada: R7 --> A RESPOSTA DA TABUADA EM BINARIO
+; Parâmetro de saída: R8 --> ALGARISMO MAIS SIGNIFICATIVO, R7 --> ALGARISMO MENOS SIGNIFICATIVO
 CONVERT_BINARY_BCD
 		PUSH{LR}
-		MOV     R2, #0         ;INICIALIZA O RESULTADO BCD COM 0
+		MOV     R8, #0         ;INICIALIZA O RESULTADO BCD COM 0
 LOOPBCD
-        CMP     R1, #0         ;VE SE O BINARIO JA CHEGOU NO FIM
+        CMP     R7, #0         ;VE SE O BINARIO JA CHEGOU NO FIM
         BEQ     Done           ;SE É ZERO ACABOU
-        ADD     R2, R2, #1     ;INCREMENTA O RESULTADO EM BCD
-        SUBS    R1, R1, #10    ;SUBTRAI 10 DO NUMERO BINARIO
+        ADD     R8, R8, #1     ;INCREMENTA O RESULTADO EM BCD
+        SUBS    R7, R7, #10    ;SUBTRAI 10 DO NUMERO BINARIO
         BCS     LOOPBCD           ; If carry flag is set, continue looping
 Done
 		POP{LR}
