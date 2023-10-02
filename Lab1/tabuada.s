@@ -38,9 +38,20 @@
 		IMPORT PortP_Controle		; Permite chamar PortP_Output de outro arquivo	
 		IMPORT PortJ_Input          ; Permite chamar PortJ_Input de outro arquivo
 									
-; Decodificaçao para os displays de 7 segmentos de 0 a F
-DISPLAY_NUMBERS   DCB   0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x6F, 0x77, 0x7C, 0x39, 0x5E, 0x79, 0x71
-
+; Decodificaçao para os displays de 7 segmentos de 0 a 9
+; DCB expression => A quoted string. The characters of the string are loaded into consecutive bytes of store at DISPLAY_NUMBERS
+DISPLAY_NUMBERS   DCB   2_00111111, 2_00000110, 2_01011011, 2_01001111, 2_01100110, 2_01101101, 2_01111101, 2_00000111, 2_01111111, 2_01100111
+;0011 1111 	0 -> a b c d e f 
+;0000 0110  1 -> b c 
+;0101 1011  2 -> a b d e g 
+;0100 1111  3 -> a b c d g
+;0110 0110  4 -> b c f g
+;0110 1101  5 -> a c d f g
+;0111 1101  6 -> a c d e f g
+;0000 0111  7 -> a b c
+;0111 1111  8 -> a b c d e f g
+;0110 0111  9 -> a b c f g
+;
 ; -------------------------------------------------------------------------------
 ; Função main()
 Start  		
@@ -145,10 +156,13 @@ CARREGA_LEDS
 	CMP R3, #0		;NUMERO ATUAL CHEGOU AO FIM
 	ITTTT NE
 		LSLNE R2, R2, #1	; JOGA OS BITS PRA ESQUERDA
-		ADDNE R2, R2, #1	; ACIONA O NOVO ULTIMO BIT COMO 0
+		ADDNE R2, R2, #1	; ACIONA O NOVO ULTIMO BIT COMO 1
 		SUBNE R3, R3, #1	; DIMINUI UM DO NUMERO ATUAL
-		BNE CARREGA_LEDS
-	
+		BNE CARREGA_LEDS	; ex: se o numero atual for 3
+							;	  r3 = 3 -> acende 1 led, r3 = 2, r2 = 1
+							;     r3 = 2 -> acende 2 led, r3 = 1, r2 = 11	
+							;     r3 = 1 -> acende 3 led, r3 = 0, r2 = 111
+							; 	  cai fora 
 	MOV R0, R2
 	BL PortA_Output
 	BL PortQ_Output
@@ -162,13 +176,14 @@ CARREGA_LEDS
 ; -------------------------------------------------------------------------------
 ; Função UPDATE_D1
 ; Atualiza o algarismo da dezena CONTROLE PB4
-; Parâmetro de entrada: R0 -> VALOR EM DECIMAL PARA APRESENTAR NO DISPLAY
+; Parâmetro de entrada: R0 -> VALOR EM BINARIO PARA APRESENTAR NO DISPLAY1
 ; Parâmetro de saída: Nada
 UPDATE_D1
 	PUSH {LR}
 	
 	LDR  R1, =DISPLAY_NUMBERS
-	LDRB R2, [R1, R0]
+	LDRB R2, [R1, R0]  ;R0 É UM OFFSET NO VETOR ONDE COMEÇA DISPLAY NUMBERS
+						;DESSA FORMA, LE-SE O BINARIO DECODIFICADO PARA LIGAR OS LEDS DO DISPLAY7SEG
 	
 	MOV R0, R2
 	BL PortA_Output
@@ -184,7 +199,7 @@ UPDATE_D1
 ; -------------------------------------------------------------------------------
 ; Função UPDATE_D2
 ; Atualiza o algarismo da unidade CONTROLE PB5
-; Parâmetro de entrada: R0 -> VALOR EM DECIMAL PARA APRESENTAR NO DISPLAY
+; Parâmetro de entrada: R0 -> VALOR EM BINARIO PARA APRESENTAR NO DISPLAY2
 ; Parâmetro de saída: Nada
 UPDATE_D2
 	PUSH {LR}
