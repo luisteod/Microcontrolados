@@ -46,12 +46,11 @@ DISPLAY_NUMBERS   DCB   0x3F, 0x06, 0x5B, 0x4F, 0x66, 0x6D, 0x7D, 0x07, 0x7F, 0x
 Start  		
 	BL PLL_Init                 ;Chama a subrotina para alterar o clock do microcontrolador para 80MHz
 	BL SysTick_Init
-	BL SysTick_Wait1ms
 	BL GPIO_Init                ;Chama a subrotina que inicializa os GPIO
 	
 ;	R0		PARAMETRO DAS FUNCOES DE GPIO
-;	R1		AUX DAS FUNCOES GPIO
-;	R2		AUX DAS FUNCOES GPIO
+;	R1		AUX GERAL
+;   R2		AUX GERAL
 ;	R3		AUX GERAL
 ;	R4		ESTADO DOS BOTOES
 ;	R5		NUMERO TABUADA 
@@ -115,8 +114,8 @@ PROCESS
 	MUL R7, R5, R6
 	MOV R3, #10
 	UDIV R8, R7, R3 ;ATUALIZA ALGARISMO DEZENA
-	MUL R3, R3, R8
-	SUB R9, R7, R3 ;ATUALIZA ALGARISMO UNIDADE
+	MUL R2, R3, R8
+	SUB R9, R7, R2 ;ATUALIZA ALGARISMO UNIDADE
 
 ; -------------------------------------------------------------------------------
 ; UPDATE
@@ -127,8 +126,39 @@ UPDATE
 	BL UPDATE_D1	;D1 DISPLAY DO ALGARISMO DA DEZENA	
 	MOV R0, R9
 	BL UPDATE_D2	;D2 DISPLAY DO ALGARISMO DA UNIDADE	
+	MOV R0, R5
+	BL UPDATE_LED
 	B MainLoop
 
+; -------------------------------------------------------------------------------
+; Função UPDATE_LED
+; Escreve nos leds 1~8 o numero atual da cuja tabuada está sendo feita
+; Parâmetro de entrada: R0 -> numero atual
+; Parâmetro de saída: Nada
+UPDATE_LED
+	PUSH {LR}
+	
+	MOV R2, #0
+	MOV R3, R0		; COPIA O NUMERO ATUAL
+
+CARREGA_LEDS
+	CMP R3, #0		;NUMERO ATUAL CHEGOU AO FIM
+	ITTTT NE
+		LSLNE R2, R2, #1	; JOGA OS BITS PRA ESQUERDA
+		ADDNE R2, R2, #1	; ACIONA O NOVO ULTIMO BIT COMO 0
+		SUBNE R3, R3, #1	; DIMINUI UM DO NUMERO ATUAL
+		BNE CARREGA_LEDS
+	
+	MOV R0, R2
+	BL PortA_Output
+	BL PortQ_Output
+	
+	MOV R0, #2_00100000		; Ativa o pino 5 do Port P
+	BL CONTROLE_LEDS
+	
+	POP {LR}
+	BX LR	
+	
 ; -------------------------------------------------------------------------------
 ; Função UPDATE_D1
 ; Atualiza o algarismo da dezena CONTROLE PB4
@@ -137,22 +167,15 @@ UPDATE
 UPDATE_D1
 	PUSH {LR}
 	
-	LDR  R11, =DISPLAY_NUMBERS
-	LDRB R10, [R11, R0]
+	LDR  R1, =DISPLAY_NUMBERS
+	LDRB R2, [R1, R0]
 	
-	AND R0, R10, #2_11110000
+	MOV R0, R2
 	BL PortA_Output
-	AND R0, R10, #2_00001111
 	BL PortQ_Output
 
 	MOV R0, #2_00010000		; ATIVA Pino 4 Port B -> PINO DO DISPLAY1
-	BL PortB_Controle			; Habilita o Port B
-	MOV R0, #1
-	BL SysTick_Wait1ms		; Aguarda 1ms
-	MOV R0, #0
-	BL PortB_Controle			; Desabilita o Port P
-	MOV R0, #1
-	BL SysTick_Wait1ms		; Aguarda 1ms
+	BL CONTROLE_DISPLAY	
 	
 	POP {LR}
 	BX LR	
@@ -166,25 +189,51 @@ UPDATE_D1
 UPDATE_D2
 	PUSH {LR}
 	
-	LDR  R11, =DISPLAY_NUMBERS
-	LDRB R10, [R11, R0]
+	LDR  R1, =DISPLAY_NUMBERS
+	LDRB R2, [R1, R0]
 	
-	AND R0, R10, #2_11110000
+	MOV R0, R2
 	BL PortA_Output
-	AND R0, R10, #2_00001111
 	BL PortQ_Output
 
 	MOV R0, #2_00100000		; ATIVA Pino 5 Port B -> PINO DO DISPLAY2
+	BL CONTROLE_DISPLAY	
+	
+	POP {LR}
+	BX LR	
+
+; -------------------------------------------------------------------------------
+; Função CONTROLE_DISPLAY
+; Atualiza o controle do display para que os valores passem e logo desativa
+; Parâmetro de entrada: R0 -> Port a ser habilitada
+; Parâmetro de saída: Nada
+CONTROLE_DISPLAY
+	PUSH{LR}
 	BL PortB_Controle			; Habilita o Port B
 	MOV R0, #1
 	BL SysTick_Wait1ms		; Aguarda 1ms
 	MOV R0, #0
-	BL PortB_Controle			; Desabilita o Port P
+	BL PortB_Controle			; Desabilita o Port B
 	MOV R0, #1
 	BL SysTick_Wait1ms		; Aguarda 1ms
-	
-	POP {LR}
-	BX LR	
+	POP{LR}
+	BX LR
+; -------------------------------------------------------------------------------
+; Função CONTROLE_LEDS
+; Atualiza o controle dos LEDS para que os valores passem e logo desativa
+; Parâmetro de entrada: R0 -> Port a ser habilitada
+; Parâmetro de saída: Nada
+CONTROLE_LEDS
+	PUSH{LR}
+	BL PortP_Controle			; Habilita o Port P
+	MOV R0, #1
+	BL SysTick_Wait1ms		; Aguarda 1ms
+	MOV R0, #0
+	BL PortP_Controle			; Desabilita o Port P
+	MOV R0, #1
+	BL SysTick_Wait1ms		; Aguarda 1ms
+	POP{LR}
+	BX LR
 
 ; -------------------------------------------------------------------------------------------------------------------------
 ; Fim do Arquivo
