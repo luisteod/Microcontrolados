@@ -49,137 +49,143 @@ Start
 	BL SysTick_Wait1ms
 	BL GPIO_Init                ;Chama a subrotina que inicializa os GPIO
 	
-	MOV R0, #2_00100000			;A saída dos leds é sempre ativa
-	BL PortP_Controle
+;	R0		PARAMETRO DAS FUNCOES DE GPIO
+;	R1		AUX DAS FUNCOES GPIO
+;	R2		AUX DAS FUNCOES GPIO
+;	R3		AUX GERAL
+;	R4		ESTADO DOS BOTOES
+;	R5		NUMERO TABUADA 
+;	R6		FATOR TABUADA
+;	R7		RESULTADO TABUADA
+;	R8		ALGARISMO DA DEZENA
+;	R9		ALGARISMO DA UNIDADE
+
+
 	
+	MOV R4, #2_00000011				;ESTADO DOS BOTOES
 	MOV R5, #2_00000001         ;REGISTRADOR 5 QUE GUARDA O NUMERO ATUAL
-	MOV R6, #2_00000001			;REGISTRADOR 6 QUE GUARDA O FATOR MULTIPLICATIVO ATUAL  I.E 1X1
+	MOV R6, #2_00000001			;REGISTRADOR 6 QUE GUARDA O FATOR MULTIPLICATIVO ATUAL  I.E. 1X1
 	MUL R7, R5, R6				;REGISTRADOR 7 QUE GUARDA A MULTIPLICACAO
-
+	
 MainLoop
-	BL ATIVA_LED
 	BL PortJ_Input				;Chama a subrotina que lê o estado das chaves e coloca o resultado em R0
+	CMP R0, R4					
+	BEQ PROCESS
+	BIC R3, R4, R0				
+	;R4 PODE SER 00 01 10 11
+	;R0 PODE SER 00 01 10 11    SOMENTE MUDA QUANDO É DE 1 PARA 0, OU SEJA, 11 PARA 01 OU 11 PARA 10
+	;                           SE MUDA DE 01 PARA 11 OU 10 PARA 11, NAO MUDA NADA
+Verifica_SW1	
+	CMP R3, #2_00000001			 ;Verifica se somente a chave SW1 está pressionada
+	BNE Verifica_SW2             ;Se o teste falhou, pula
 	
-Verifica_SW1
-	CMP	R0, #2_00000001			;Se o SW1 está pressionado
-	BEQ MUDA_NUMERO				;muda o número
-
-Verifica_SW2
-	CMP R0, #2_00000010			;Se o SW2 está pressionado
-	BEQ MUDA_FATOR				;muda o fator multiplicativo
-	
-	B MainLoop					;Volta pro MainLoop
-
-
-;==================================================================================================================
-MUDA_NUMERO
-	MOV R1, R5					;Coloca o número atual no registrador R1
-	ADD R1, #1					;Próximo número
-	
-	CMP R1, #2_00001001
+	MOV R3, R5
+	ADD R3, R3, #1
+	CMP R3, #2_00001001
 	ITE EQ
 		MOVEQ R5, #2_00000001
-		MOVNE R5, R1
+		MOVNE R5, R3
 	
-	MOV R6, #2_00000000
+	MOV R6, #2_00000001
+	 
+	B PROCESS
+
 	
+Verifica_SW2	
+	CMP R3, #2_00000010			 ;Verifica se somente a chave SW2 está pressionada
+	BNE PROCESS
 	
-	B CALCULA_TABUADA			;Se o número mudar, reinicia a tabuada
-	
-MUDA_FATOR
-	MOV R1, R6				 
-	ADD R1, #1
-	CMP R1, #2_00001010
+	MOV R3, R6
+	ADD R3, R3, #1
+	CMP R3, #2_00001010
 	ITE EQ
-		MOVEQ R6, #2_00000000
-		MOVNE R6, R1
+		MOVEQ R6, #2_00000001
+		MOVNE R6, R3
 		
-	B CALCULA_TABUADA			;Se o FATOR multiplicativo mudar, recalcula a tabuada
+	B PROCESS
 
 
-;--------------------------------------------------------------------------------
-; Função ATIVA_LED
-; Parâmetro de entrada: R5 --> O NUMERO ATUAL
-; Parâmetro de saída: Não tem
-ATIVA_LED
-	PUSH{LR}
-	
-	MOV R0, R5					;Manda o número atual para a saída dos LEDS
-	BL PortA_Output				;A7~A4
-	
-	MOV R0, #1
-	BL SysTick_Wait1ms
-	
-	MOV R0, R5					;Manda o número atual para a saída dos LEDS
-	BL PortQ_Output				;Q3~Q0
-	
-	MOV R0, #1
-	BL SysTick_Wait1ms
-	
-	POP{LR}
-	BX LR
+; -------------------------------------------------------------------------------
+; Função PROCESS
+; Faz a multiplicação dos números
+; Parâmetro de entrada: R5 -> NUMERO ATUAL, R6 -> FATOR MULT ATUAL
+; Parâmetro de saída: R9 -> ALGARISMO DA UNIDADE DO RESULTADO, R8 -> ALGARISMO DA DEZENA DA UNIDADE
+PROCESS
+	MOV R4, R0
+	MUL R7, R5, R6
+	MOV R3, #10
+	UDIV R8, R7, R3 ;ATUALIZA ALGARISMO DEZENA
+	MUL R3, R3, R8
+	SUB R9, R7, R3 ;ATUALIZA ALGARISMO UNIDADE
 
-;--------------------------------------------------------------------------------
-; Função CALCULA_TABUADA
-; Parâmetro de entrada: R5 --> O NUMERO ATUAL, R6 --> O FATOR ATUAL
-; Parâmetro de saída: Não tem
-CALCULA_TABUADA
-	MUL R7,R5,R6
-	BL CONVERT_BINARY_BCD    	;USA O VALOR DA TABUADA EM BINARIO NO R1 E DEVOLVE EM BCD NO R2
-	BL ATIVA_DISPLAY1			
-	BL ATIVA_DISPLAY2
+; -------------------------------------------------------------------------------
+; UPDATE
+; Faz a atualização dos LEDS e dos DISPLAYS
+; R9 -> ALGARISMO DA UNIDADE DO RESULTADO, R8 -> ALGARISMO DA DEZENA DA UNIDADE
+UPDATE
+	MOV R0, R8
+	BL UPDATE_D1	;D1 DISPLAY DO ALGARISMO DA DEZENA	
+	MOV R0, R9
+	BL UPDATE_D2	;D2 DISPLAY DO ALGARISMO DA UNIDADE	
 	B MainLoop
-	
-;--------------------------------------------------------------------------------
-; Função CONVERT_BINARY_BCD
-; Parâmetro de entrada: R7 --> A RESPOSTA DA TABUADA EM BINARIO
-; Parâmetro de saída: R8 --> ALGARISMO MAIS SIGNIFICATIVO, R7 --> ALGARISMO MENOS SIGNIFICATIVO
-CONVERT_BINARY_BCD
-		PUSH{LR}
-		MOV     R8, #0         ;INICIALIZA O RESULTADO BCD COM 0
-LOOPBCD
-        CMP     R7, #0         ;VE SE O BINARIO JA CHEGOU NO FIM
-        BEQ     Done           ;SE É ZERO ACABOU
-        ADD     R8, R8, #1     ;INCREMENTA O RESULTADO EM BCD
-        SUBS    R7, R7, #10    ;SUBTRAI 10 DO NUMERO BINARIO
-        BCS     LOOPBCD           ; If carry flag is set, continue looping
-Done
-		POP{LR}
-		BX LR
-		
+
 ; -------------------------------------------------------------------------------
-; Função ATIVA_DISPLAY1
-; Parâmetro de entrada: R2 --> O ALGARISMO CORRESPONDENTE 
-; Parâmetro de saída: Não tem
-ATIVA_DISPLAY1
-	PUSH{LR}
-	MOV R0, #1000
-	BL SysTick_Wait1ms
-	MOV R0, #2_00010000
-	BL PortB_Controle      	;Se vai mudar o número, ativa o transistor do DS1	
-	MOV R0, R2
+; Função UPDATE_D1
+; Atualiza o algarismo da dezena CONTROLE PB4
+; Parâmetro de entrada: R0 -> VALOR EM DECIMAL PARA APRESENTAR NO DISPLAY
+; Parâmetro de saída: Nada
+UPDATE_D1
+	PUSH {LR}
+	
+	LDR  R11, =DISPLAY_NUMBERS
+	LDRB R10, [R11, R0]
+	
+	AND R0, R10, #2_11110000
 	BL PortA_Output
+	AND R0, R10, #2_00001111
 	BL PortQ_Output
-	POP{LR}
-	BX LR
+
+	MOV R0, #2_00010000		; ATIVA Pino 4 Port B -> PINO DO DISPLAY1
+	BL PortB_Controle			; Habilita o Port B
+	MOV R0, #1
+	BL SysTick_Wait1ms		; Aguarda 1ms
+	MOV R0, #0
+	BL PortB_Controle			; Desabilita o Port P
+	MOV R0, #1
+	BL SysTick_Wait1ms		; Aguarda 1ms
+	
+	POP {LR}
+	BX LR	
+	
 	
 ; -------------------------------------------------------------------------------
-; Função ATIVA_DISPLAY2
-; Parâmetro de entrada: R1 --> O ALGARISMO CORRESPONDENTE
-; Parâmetro de saída: Não tem
-ATIVA_DISPLAY2
-	PUSH{LR}
-	MOV R0, #1000
-	BL SysTick_Wait1ms
-	MOV R0, #2_00001000		;Se vai mudar o fator multiplicativo, ativa o transistor do DS2
-	BL PortB_Controle
-	MOV R0, R1
+; Função UPDATE_D2
+; Atualiza o algarismo da unidade CONTROLE PB5
+; Parâmetro de entrada: R0 -> VALOR EM DECIMAL PARA APRESENTAR NO DISPLAY
+; Parâmetro de saída: Nada
+UPDATE_D2
+	PUSH {LR}
+	
+	LDR  R11, =DISPLAY_NUMBERS
+	LDRB R10, [R11, R0]
+	
+	AND R0, R10, #2_11110000
 	BL PortA_Output
+	AND R0, R10, #2_00001111
 	BL PortQ_Output
-	POP{LR}
-	BX LR
+
+	MOV R0, #2_00100000		; ATIVA Pino 5 Port B -> PINO DO DISPLAY2
+	BL PortB_Controle			; Habilita o Port B
+	MOV R0, #1
+	BL SysTick_Wait1ms		; Aguarda 1ms
+	MOV R0, #0
+	BL PortB_Controle			; Desabilita o Port P
+	MOV R0, #1
+	BL SysTick_Wait1ms		; Aguarda 1ms
 	
-	
+	POP {LR}
+	BX LR	
+
 ; -------------------------------------------------------------------------------------------------------------------------
 ; Fim do Arquivo
 ; -------------------------------------------------------------------------------------------------------------------------	
