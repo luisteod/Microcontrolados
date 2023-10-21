@@ -32,6 +32,7 @@ ENDERECO_BASE EQU 0x20000400
 		IMPORT PLL_Init
 		IMPORT SysTick_Init
 		IMPORT SysTick_Wait
+		IMPORT SysTick_Wait1ms
         IMPORT GPIO_Init            ; Permite chamar GPIO_Init de outro arquivo
 		IMPORT PortK_Output			; Permite chamar PortK_Output de outro arquivo
 		IMPORT PortM_Output			; Permite chamar PortM_Output de outro arquivo
@@ -45,7 +46,7 @@ COFRE_ABERTO DCB 0x43, 0x66, 0x72, 0x20 ,0x61,0x62,0x74,0x2C, 0x00
 DIGITE_NOVA_SENHA DCB 0x64, 0x67, 0x74, 0x20, 0x6E, 0x76, 0x20, 0x73, 0x6E, 0x68, 0x00
 ;
 
-init_string = 0x43, 0x6F, 0x66, 0x72, 0x65, 0x20, 0x61, 0x62, 0x65, 0x72, 0x74, 0x6F, 0x2C, 0x20, 0x64, 0x69, 0x67, 0x69, 0x74, 0x65, 0x20, 0x6E, 0x6F, 0x76, 0x61, 0x20, 0x73, 0x65, 0x6E, 0x68, 0x61, 0x00
+init_string = 0x43, 0x6F, 0x66, 0x72, 0x65, 0x20, 0x61, 0x62, 0x65, 0x72, 0x74, 0x6F, 0x2C, 0x20, 0x64, 0x69, 0x67, 0x69, 0x74, 0x65, 0x20, 0x6E, 0x6F, 0x76, 0x61, 0x20, 0x73, 0x65, 0x6E, 0x68, 0x61, 0x20, 0x00
 ; -------------------------------------------------------------------------------
 ; Função main()
 Start  		
@@ -82,12 +83,15 @@ LCD_Init
 
 
 MainLoop
+	mov r10, #1
+	
 	BL LCD_Update
 	B MainLoop
 	
 LCD_Update
 	push{lr}
-    nop
+	
+    bl Cofre_Aberto
 	pop{lr}
 	BX LR
 
@@ -127,9 +131,11 @@ LCD_SendCommand
 ; Parâmetro de saída: Não tem
 LCD_SendData
 	PUSH{LR}
+	
     ;Colocar o comando nos pinos de dados do LCD
 	BL PortK_Output
-	
+	mov r0, #200
+	BL SysTick_Wait1ms
 	; Configurar RS (Register Select) para 1 (Dado) e RW (Read/Write) para 0 (escrita)
     MOV R1, #2_00000001
 	
@@ -173,7 +179,7 @@ STRING_TO_LCD
 	mov r6, #0
 iterateLoop
 	b test_end_line
-	
+
 continue_sendData
 	ldrb r0, [r5, r6]  
 	cmp r0, #0         
@@ -185,28 +191,24 @@ continue_sendData
 
 test_end_line
 	cmp r11, #0x10
-	beq qual_linha
+	beq atualiza_modo
+	b continue_sendData
+
+atualiza_modo
+	movs r0, #0x07
+	bl LCD_SendCommand
+	bl Delay_40us
+	
+	mov r10, #2
 	b continue_sendData
 	
-qual_linha
-	mov r11, #0
-	cmp r10,#1
-	beq pula_linha_2
-	b volta_linha_1
-
-pula_linha_2
-	mov r10, #2
-	mov r0, #0xc0
-	bl LCD_SendCommand
-	bl Delay_40us
-	b continue_sendData
-volta_linha_1
-	mov r10, #1
-	mov r0, #0x80
-	bl LCD_SendCommand
-	bl Delay_40us
-	b continue_sendData
 end_word
+	movs r0, #0x18
+	bl LCD_SendCommand
+	bl Delay_40us
+	movs r0, #200
+	bl SysTick_Wait1ms
+	b end_word
 	POP{LR}
 	BX LR
 
@@ -257,6 +259,8 @@ delay_loop
 
     POP{LR}
     BX LR
+
+Delay_1s
 
 ; -------------------------------------------------------------------------------------------------------------------------
 ; Fim do Arquivo
