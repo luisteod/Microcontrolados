@@ -87,7 +87,7 @@ void PortF_Output(uint32_t leds)
 	//vamos zerar somente os bits 0 e 4
 	temp = GPIO_PORTF_AHB_DATA_R & 0xEE; //0b11101110
 	//agora vamos fazer o OR com o valor recebido na fun��o
-	temp = temp | valor;
+	temp = temp | leds;
 	GPIO_PORTF_AHB_DATA_R = temp;
 }
 
