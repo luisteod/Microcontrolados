@@ -55,19 +55,12 @@ NULL EQU 0x00000000
 ;                  c�digo
         AREA    |.text|, CODE, READONLY, ALIGN=2
 
-		; Se alguma fun��o do arquivo for chamada em outro arquivo	
-        EXPORT Start                ; Permite chamar a fun��o Start a partir de 
-			                        ; outro arquivo. No caso startup.s
+        EXPORT varredura            ; Permite chamar a fun��o varredura a partir de
 									
 		; Se chamar alguma fun��o externa
         IMPORT PortM_Output_Teclado ; Permite chamar PortM_Output_Teclado de outro arquivo	
-		IMPORT PLL_Init
-		IMPORT SysTick_Init
 		IMPORT SysTick_Wait
-        IMPORT GPIO_Init            ; Permite chamar GPIO_Init de outro arquivo
-		IMPORT PortK_Output			; Permite chamar PortK_Output de outro arquivo
 		IMPORT PortM_Output			; Permite chamar PortM_Output de outro arquivo
-		IMPORT PortL_Input          ; Permite chamar PortL_Input de outro arquivo
 		
 									
 
@@ -230,7 +223,7 @@ varreduraEnd
 
 
 
-
+; ---------------------------------------------------------------------
 ; verifica todas as linhas e retorna a linha ativa
 ; R7 - counter of bounces
 ; Returns : R0 - BIT of the line active (L0 - L3)

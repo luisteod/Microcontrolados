@@ -62,7 +62,8 @@ GPIO_PORTL              EQU    	2_0000010000000000
 	
 			EXPORT GPIO_Init
 			EXPORT PortK_Output			; Permite chamar PortK_Output de outro arquivo
-			EXPORT PortM_Output			; Permite chamar PortM_Output de outro arquivo
+			EXPORT PortM_Output_Display ; Permite chamar PortM_Output_Display de outro arquivo
+			EXPORT PortM_Output_Teclado
 			EXPORT PortL_Input          ; Permite chamar PortL_Input de outro arquivo
 
 ;--------------------------------------------------------------------------------
@@ -177,7 +178,7 @@ PortM_Output_Teclado
 	BX LR									
 	
 ; -------------------------------------------------------------------------------
-; Funcao PortM_Output 
+; Funcao PortM_Output_Display 
 ; Par�metro de entrada: R0 
 ; Par�metro de saida: Nada
 PortM_Output_Display
