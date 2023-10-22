@@ -32,14 +32,21 @@ ENDERECO_BASE EQU 0x20000400
 		IMPORT PLL_Init
 		IMPORT SysTick_Init
 		IMPORT SysTick_Wait
+		IMPORT SysTick_Wait1ms
         IMPORT GPIO_Init            ; Permite chamar GPIO_Init de outro arquivo
 		IMPORT PortK_Output			; Permite chamar PortK_Output de outro arquivo
 		IMPORT PortM_Output			; Permite chamar PortM_Output de outro arquivo
 		IMPORT PortL_Input          ; Permite chamar PortL_Input de outro arquivo
 		
-									
+;“Cofre aberto, digite nova senha para fechar o cofre”.
+;cofre aberto = cfr abt
+COFRE_ABERTO DCB 0x43, 0x66, 0x72, 0x20 ,0x61,0x62,0x74,0x2C, 0x00
 
+;digite nova senha = dgt nv snh
+DIGITE_NOVA_SENHA DCB 0x64, 0x67, 0x74, 0x20, 0x6E, 0x76, 0x20, 0x73, 0x6E, 0x68, 0x00
 ;
+
+init_string = 0x43, 0x6F, 0x66, 0x72, 0x65, 0x20, 0x61, 0x62, 0x65, 0x72, 0x74, 0x6F, 0x2C, 0x20, 0x64, 0x69, 0x67, 0x69, 0x74, 0x65, 0x20, 0x6E, 0x6F, 0x76, 0x61, 0x20, 0x73, 0x65, 0x6E, 0x68, 0x61, 0x20, 0x00
 ; -------------------------------------------------------------------------------
 ; Função main()
 Start  		
@@ -47,40 +54,45 @@ Start
 	BL SysTick_Init
 	BL GPIO_Init                ;Chama a subrotina que inicializa os GPIO
 	
+	mov r10, #1    ;equivale à linha atual
+	mov r11, #0 ;equivale à coluna atual da linha
+	
 LCD_Init
-	PUSH{LR}
     movs r0, #0x38      
     bl  LCD_SendCommand
-	BL Delay_40us
-	
+	bl Delay_40us
+
     movs r0, #0x0C      ; Display ON/OFF Control (Display on, Cursor off, Blinking off)
     bl  LCD_SendCommand
-	BL Delay_40us
+	bl Delay_40us
 
     movs r0, #0x01      ; Clear Display
     bl  LCD_SendCommand
-	BL Delay_40us
+	bl Delay_1640us
 
-    movs r0, #0x06      ; Entry Mode Set (Increment cursor, no display shift)
+    movs r0, #0x06    ; Entry Mode Set (Increment cursor, no display shift)
     bl  LCD_SendCommand
-	BL Delay_40us
+	bl Delay_40us
 
     movs r0, #0x80
     bl  LCD_SendCommand
-	BL Delay_40us
+	bl Delay_40us
+	
+    BL Cofre_Aberto
 
-    movs r0, #letra_A
-    bl  LCD_SendData
-	BL Delay_40us
 
 
 MainLoop
+	mov r10, #1
+	
 	BL LCD_Update
-	BL Delay_40us
 	B MainLoop
 	
 LCD_Update
-	NOP
+	push{lr}
+	
+    bl Cofre_Aberto
+	pop{lr}
 	BX LR
 
 ; Função LCD_SendCommand
@@ -108,16 +120,22 @@ LCD_SendCommand
 	BL PortM_Output
 	
 	BL Delay_40us
- 
+
     POP{LR}
     BX LR
 
+
+; Função LCD_SendData
+; Rotina para enviar um dado para o LCD, utiliza os pinos de controle M2-ENABLE, M1-RW, M0-RS
+; Parâmetro de entrada: R0 - Comando a ser enviado
+; Parâmetro de saída: Não tem
 LCD_SendData
 	PUSH{LR}
 	
     ;Colocar o comando nos pinos de dados do LCD
 	BL PortK_Output
-	
+	mov r0, #200
+	BL SysTick_Wait1ms
 	; Configurar RS (Register Select) para 1 (Dado) e RW (Read/Write) para 0 (escrita)
     MOV R1, #2_00000001
 	
@@ -133,37 +151,66 @@ LCD_SendData
 	BL PortM_Output
 	
 	BL Delay_40us
-	
+	add r11, #1
     POP{LR}
     BX LR
 
+; Função Cofre_Aberto
+; Rotina que envia a mensagem "COFRE ABERTO" para o LCD se o cofre estiver aberto
+; Parâmetro de entrada: Não tem
+; Parâmetro de saída: Não tem
 Cofre_Aberto
-	STRING DCB 0x43, 0x6F, 0x66, 0x72, 0x65, 0x20 ,0x61, 0x62, 0x65, 0x72, 0x74, 0x6F, 0x2E, 0x2E, 0x2E, 0x0A
-	LDR  R1, =STRING
+	PUSH{LR}
+	
+	LDR R5, =init_string
 	BL STRING_TO_LCD
-	LDRB R2, [R1, R0]  ;R0 É UM OFFSET NO VETOR ONDE COMEÇA 
-
-;RECEBE UMA STRING E COLOCA ELA NO LCD
-STRING_TO_LCD
+	
+	POP{LR}
+	
+	BX LR
 	
 
+; Função STRING_TO_LCD
+; Rotina para enviar uma string para o LCD
+; Parâmetro de entrada: R5 - o rótulo contendo a mensagem a ser enviada
+; Parâmetro de saída: Não tem
+STRING_TO_LCD
+	PUSH{LR}
+	mov r6, #0
+iterateLoop
+	b test_end_line
 
+continue_sendData
+	ldrb r0, [r5, r6]  
+	cmp r0, #0         
+	beq end_word       
+	bl  LCD_SendData
+	bl Delay_40us
+	add r6, #1
+	b iterateLoop
 
+test_end_line
+	cmp r11, #0x10
+	beq atualiza_modo
+	b continue_sendData
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+atualiza_modo
+	movs r0, #0x07
+	bl LCD_SendCommand
+	bl Delay_40us
+	
+	mov r10, #2
+	b continue_sendData
+	
+end_word
+	movs r0, #0x18
+	bl LCD_SendCommand
+	bl Delay_40us
+	movs r0, #200
+	bl SysTick_Wait1ms
+	b end_word
+	POP{LR}
+	BX LR
 
 ; Função Delay_10us
 ; Rotina de atraso de aproximadamente 10 microssegundos
@@ -212,6 +259,8 @@ delay_loop
 
     POP{LR}
     BX LR
+
+Delay_1s
 
 ; -------------------------------------------------------------------------------------------------------------------------
 ; Fim do Arquivo
