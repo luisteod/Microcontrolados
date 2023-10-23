@@ -1,6 +1,7 @@
 ; gpio.s
 ; Desenvolvido para a placa EK-TM4C1294XL
-; Aluno Matheus Augusto Burda
+; Aluno Vinicius Kamiya Svierk
+; Aluno Luis Henrique
 
 
 ; -------------------------------------------------------------------------------
