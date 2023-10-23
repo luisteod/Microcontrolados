@@ -35,7 +35,7 @@ ENDERECO_BASE_SENHA EQU 0x20000400
 		IMPORT SysTick_Wait1ms
         IMPORT GPIO_Init            ; Permite chamar GPIO_Init de outro arquivo
 		IMPORT PortK_Output			; Permite chamar PortK_Output de outro arquivo
-		IMPORT PortM_Output_Display_Display			; Permite chamar PortM_Output de outro arquivo
+		IMPORT PortM_Output_Display		; Permite chamar PortM_Output de outro arquivo
 		IMPORT PortL_Input          ; Permite chamar PortL_Input de outro arquivo
 		
 ;“Cofre aberto, digite nova senha para fechar o cofre”.

@@ -160,7 +160,7 @@ EsperaGPIO  LDR   R2, [R0]
 ; Funcao PortL_Input
 ; Par�metro de entrada: N�o tem
 ; Par�metro de sa�da: R0 --> o valor da leitura
-PortL_Input_Teclado
+PortL_Input
 	LDR	R1, =GPIO_PORTL_DATA_R		    ;Carrega o valor do offset do data register
 	LDR R0, [R1]                            ;L� no barramento de dados dos pinos [J0]
 	BX LR									;Retorno
@@ -193,7 +193,7 @@ PortM_Output_Display
 ; Funcao PortK_Output
 ; Par�metro de entrada: R0 -> valor para escrever no display
 ; Par�metro de sa�da: Nada
-PortK_Output_Teclado
+PortK_Output
 	LDR	R1, =GPIO_PORTK_DATA_R		    ;Carrega o valor do offset do data register
 	LDR R2, [R1]
 	BIC R2, #2_11111111                     ;Primeiro limpamos os dois bits do lido da porta
