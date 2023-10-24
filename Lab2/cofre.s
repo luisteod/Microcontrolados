@@ -40,7 +40,7 @@ ENDERECO_BASE_SENHA EQU 0x20000400
 		IMPORT varredura
 		
 ;“Cofre aberto, digite nova senha para fechar o cofre”.
-cofre_aberto = 0x43, 0x6F, 0x66, 0x72, 0x65, 0x20, 0x61, 0x62, 0x65, 0x72, 0x74, 0x6F, 0x2C, 0x20, 0x64, 0x69, 0x67, 0x69, 0x74, 0x65, 0x20, 0x6E, 0x6F, 0x76, 0x61, 0x20, 0x73, 0x65, 0x6E, 0x68, 0x61, 0x20, 0x00
+cofre_aberto = 0x43, 0x6F, 0x66, 0x72, 0x65, 0x20, 0x61, 0x62, 0x65, 0x72, 0x74, 0x6F, 0x00; 0x2C, 0x20, 0x64, 0x69, 0x67, 0x69, 0x74, 0x65, 0x20, 0x6E, 0x6F, 0x76, 0x61, 0x20, 0x73, 0x65, 0x6E, 0x68, 0x61, 0x20, 0x00
 
 ;"Cofre fechando..."
 cofre_fechando = 0x43, 0x6F, 0x66, 0x72, 0x65, 0x20, 0x66, 0x65, 0x63, 0x68, 0x61, 0x6E, 0x64, 0x6F, 0x00
@@ -48,7 +48,13 @@ cofre_fechando = 0x43, 0x6F, 0x66, 0x72, 0x65, 0x20, 0x66, 0x65, 0x63, 0x68, 0x6
 ;"Cofre fechado!"
 cofre_fechado = 0x43, 0x6F, 0x66, 0x72, 0x65, 0x20, 0x66, 0x65, 0x63, 0x68, 0x61, 0x64, 0x6F, 0x21, 0x00
 
-;estados do cofre -> R7
+
+;"Senha:"
+senha = 0x53, 0x65, 0x6E, 0x68, 0x61, 0x3A, 0x00
+
+;"Mestra:"
+mestra = 0x4d, 0x65, 0x73, 0x74, 0x72, 0x61, 0x3a, 0x00
+;estados do cofre -> R9
 ;0x0 = aberto
 ;0x1 = fechando
 ;0x2 = fechado
@@ -56,6 +62,9 @@ cofre_fechado = 0x43, 0x6F, 0x66, 0x72, 0x65, 0x20, 0x66, 0x65, 0x63, 0x68, 0x61
 ;estados do LCD -> R8
 ;0x0 = parado
 ;0x1 = correndo
+
+;digito_atual_senha -> R6
+;0x0, 0x1, 0x2, 0x3
 
 
 ; -------------------------------------------------------------------------------
@@ -65,7 +74,8 @@ Start
 	BL SysTick_Init
 	BL GPIO_Init                ;Chama a subrotina que inicializa os GPIO
 	
-	mov r7, #0x1
+	mov r6, #0x0
+	mov r9, #0x0
 	mov r8, #0x0
 	mov r10, #1    ;equivale à linha atual
 	mov r11, #0 ;equivale à coluna atual da linha
@@ -75,51 +85,115 @@ LCD_Init
     bl  LCD_SendCommand
 	bl Delay_40us
 
-    movs r0, #0x0C      ; Display ON/OFF Control (Display on, Cursor off, Blinking off)
+    movs r0, #0x0D      ; Display ON/OFF Control (Display on, Cursor off, Blinking off)
     bl  LCD_SendCommand
 	bl Delay_40us
-
-    movs r0, #0x01      ; Clear Display
+	
+	movs r0, #0x01      ; Clear Display
     bl  LCD_SendCommand
 	bl Delay_1640us
 
     movs r0, #0x06    ; Entry Mode Set (Increment cursor, no display shift)
     bl  LCD_SendCommand
 	bl Delay_40us
-
-    movs r0, #0x80
-    bl  LCD_SendCommand
-	bl Delay_40us
 	
-	cmp r7, #0x0
-	beq Cofre_Aberto
-	
-	cmp r7, #0x1
-	beq Cofre_Fechando
-	
-	cmp r7, #0x2
-	beq Cofre_Fechado
+	BL LCD_Update_linha1
+	BL LCD_Update_linha2
 
 MainLoop	
-	BL LCD_Update
 	BL varredura
+	cmp r0, #0x0
+	beq MainLoop
+	
+	cmp r0, #0x23
+	;beq atualiza_senha
+	
+	;bl coloca_digito_senha
 	B MainLoop
-	
-LCD_Update
+
+; Função LCD_Update_linha1
+; Rotina para enviar um comando para o LCD, utiliza os pinos de controle M2-ENABLE, M1-RW, M0-RS
+; Parâmetro de entrada: R0 - Comando a ser enviado
+; Parâmetro de saída: Não tem
+LCD_Update_linha1
 	push{lr}
-	; ve se o letreiro esta em modo parado
-	cmp r8, #0x0
-	beq mantem_parado
-	
-	movs r0, #0x18
-	bl LCD_SendCommand
+
+	mov r0, #0x80
+	bl  LCD_SendCommand
 	bl Delay_40us
-	movs r0, #200
+	; ve se o letreiro esta em modo parado
+	cmp r9, #0x0
+	beq Cofre_Aberto
+	b Cofre_Fechando
+
+Cofre_Aberto
+	LDR R5, =cofre_aberto
+	BL STRING_TO_LCD
+	B continue_l1
+
+Cofre_Fechando
+	LDR R5, =cofre_fechando
+	BL STRING_TO_LCD
+	mov r0, #5000
 	bl SysTick_Wait1ms
-    
-mantem_parado
+	movs r0, #0x01      ; Clear Display
+    bl  LCD_SendCommand
+	bl Delay_1640us
+	;mov r11, #0
+
+Cofre_Fechado
+	LDR R5, =cofre_fechado
+	BL STRING_TO_LCD
+	
+
+continue_l1
 	pop{lr}
-	BX LR
+	bx lr
+  
+; Função LCD_Update_linha2
+; Rotina para enviar um comando para o LCD, utiliza os pinos de controle M2-ENABLE, M1-RW, M0-RS
+; Parâmetro de entrada: R0 - Comando a ser enviado
+; Parâmetro de saída: Não tem
+LCD_Update_linha2
+	push{lr}
+	mov r0, #0xc0
+    bl  LCD_SendCommand
+	bl Delay_40us
+
+	LDR R5, =senha
+	BL STRING_TO_LCD
+	; ve se o letreiro esta em modo parado
+	pop{lr}
+	bx lr
+
+
+;funcao coloca_digito_senha
+;entrada -> r0 digito atual
+;coloca_digito_senha
+;	push{lr}
+;	LDR R5, =senha
+;	BL STRING_TO_LCD
+;	
+;	cmp r6, #0x4
+;	beq comeca_nova_senha
+;	
+;	ldr r3, =ENDERECO_BASE_SENHA
+;	strb r0, [r3, r6]
+;	b fim_atualiza_senha
+;	
+;comeca_nova_senha
+;	mov r6, #0x0
+;	mov r0, #0xc0
+;	BL LCD_SendCommand
+;	
+;fim_atualiza_senha
+;	pop{lr}
+;	bx lr
+	
+
+
+	
+;funcao armazena_senha
 
 ; Função LCD_SendCommand
 ; Rotina para enviar um comando para o LCD, utiliza os pinos de controle M2-ENABLE, M1-RW, M0-RS
@@ -181,39 +255,7 @@ LCD_SendData
     POP{LR}
     BX LR
 
-; Função Cofre_Aberto
-; Rotina que envia a mensagem inicial de cofre aberto para o LCD 
-; Parâmetro de entrada: Não tem
-; Parâmetro de saída: Não tem
-Cofre_Aberto
-	LDR R5, =cofre_aberto
-	BL STRING_TO_LCD
-	B MainLoop
-	
-; Função Cofre_Fechando
-; Rotina que envia a mensagem de cofre fechando para o LCD quando o sistema recebe uma senha
-; Parâmetro de entrada: Não tem
-; Parâmetro de saída: Não tem
-Cofre_Fechando
-	LDR R5, =cofre_fechando
-	BL STRING_TO_LCD
-	mov r0, #5000
-	bl SysTick_Wait1ms
-	movs r0, #0x01      ; Clear Display
-    bl  LCD_SendCommand
-	bl Delay_1640us
-	mov r11, #0
-	b Cofre_Fechado
-	
-; Função Cofre_Fechado
-; Rotina que envia a mensagem de cofre fechado para o LCD
-; Parâmetro de entrada: Não tem
-; Parâmetro de saída: Não tem
-Cofre_Fechado
-	LDR R5, =cofre_fechado
-	BL STRING_TO_LCD
-	B MainLoop
-	
+
 ; Função STRING_TO_LCD
 ; Rotina para enviar uma string para o LCD
 ; Parâmetro de entrada: R5 - o rótulo contendo a mensagem a ser enviada
@@ -222,10 +264,6 @@ STRING_TO_LCD
 	PUSH{LR}
 	mov r6, #0
 iterateLoop
-	b test_end_line
-
-;envia normalmente a informacao contida na string
-continue_sendData
 	ldrb r0, [r5, r6]  
 	cmp r0, #0         
 	beq end_word       
@@ -234,22 +272,6 @@ continue_sendData
 	add r6, #1
 	b iterateLoop
 
-;verifica se a linha terminou utilizando um contador auxiliar em r11
-test_end_line
-	cmp r11, #0x10
-	beq atualiza_modo
-	b continue_sendData
-
-;quando chega no final da linha, faz com que a mensagem se desloque para a esquerda quando um novo caractere eh inserido
-atualiza_modo
-	movs r0, #0x07
-	movs r8, #0x1
-	bl LCD_SendCommand
-	bl Delay_40us
-
-;atualiza a flag de linha, para fazer o letreiro correr
-	mov r10, #2
-	b continue_sendData
 
 ;quando a palavra acaba, shifta o display se o LCD esta em modo letreiro, ou mantem ele parado
 end_word

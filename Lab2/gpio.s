@@ -170,10 +170,10 @@ PortL_Input
 PortM_Output_Teclado
 	LDR R1, =GPIO_PORTM_DIR_R			;Para configurar como saida
 	LDR R2, [R1]
-	AND R2, 0x7	;Deixa o M2-M0 e elimina o restante dos bits
+	AND R2, #0x7	;Deixa o M2-M0 e elimina o restante dos bits
 	ORR R0, R2
 	STR R0, [R1]
-
+	
 	LDR	R1, =GPIO_PORTM_DATA_R
 	MOV R0, #0							;Seta a porta M como 0		    
 	STR R0, [R1]                             

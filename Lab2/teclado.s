@@ -14,7 +14,7 @@ BAUNCES_AMOUNT EQU 5
 PM4 EQU 0x10
 PM5 EQU 0x20
 PM6 EQU 0x40
-PM7 EQU 0x80
+PM7 EQU 0x80 ;1000 0000
 
 ; linhas (ve qual linha tem 0)
 PL0 EQU 0xE ;1110
@@ -83,6 +83,8 @@ varredura
     MOV R11, #PM4
 	MOV R0, R11
     BL PortM_Output_Teclado
+	LDR R0, =0xC3500 ; ADD 10ms of delay
+	BL SysTick_Wait
     BL verifyLines
     MOV R12, R0
     CMP R12, #0
@@ -92,6 +94,8 @@ varredura
     MOV R11, #PM5
 	MOV R0, R11
     BL PortM_Output_Teclado
+	LDR R0, =0xC3500 ; ADD 10ms of delay
+	BL SysTick_Wait
     BL verifyLines
     MOV R12, R0
     CMP R12, #0
@@ -101,6 +105,8 @@ varredura
     MOV R11, #PM6
 	MOV R0, R11
     BL PortM_Output_Teclado
+	LDR R0, =0xC3500 ; ADD 10ms of delay
+	BL SysTick_Wait
     BL verifyLines
     MOV R12, R0
     CMP R12, #0
@@ -110,6 +116,8 @@ varredura
     MOV R11, #PM7
 	MOV R0, R11	
     BL PortM_Output_Teclado
+	LDR R0, =0xC3500 ; ADD 10ms of delay
+	BL SysTick_Wait
     BL verifyLines
     MOV R12, R0
     CMP R12, #0
