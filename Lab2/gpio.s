@@ -5,11 +5,11 @@
 
 
 ; -------------------------------------------------------------------------------
-        THUMB                        ; Instruções do tipo Thumb-2
+        THUMB                        ; Instruï¿½ï¿½es do tipo Thumb-2
 ; -------------------------------------------------------------------------------
-; Declarações EQU - Defines
+; Declaraï¿½ï¿½es EQU - Defines
 ; ========================
-; Definições dos Registradores Gerais
+; Definiï¿½ï¿½es dos Registradores Gerais
 SYSCTL_RCGCGPIO_R	 EQU	0x400FE608
 SYSCTL_PRGPIO_R		 EQU    0x400FEA08
 ; ========================
@@ -57,35 +57,36 @@ GPIO_PORTL              EQU    	2_0000010000000000
 	
 
 ; -------------------------------------------------------------------------------
-; Área de Código - Tudo abaixo da diretiva a seguir será armazenado na memória de 
-;                  código
+; ï¿½rea de Cï¿½digo - Tudo abaixo da diretiva a seguir serï¿½ armazenado na memï¿½ria de 
+;                  cï¿½digo
 			AREA    |.text|, CODE, READONLY, ALIGN=2
 	
 			EXPORT GPIO_Init
 			EXPORT PortK_Output			; Permite chamar PortK_Output de outro arquivo
-			EXPORT PortM_Output			; Permite chamar PortM_Output de outro arquivo
+			EXPORT PortM_Output_Display ; Permite chamar PortM_Output_Display de outro arquivo
+			EXPORT PortM_Output_Teclado
 			EXPORT PortL_Input          ; Permite chamar PortL_Input de outro arquivo
 
 ;--------------------------------------------------------------------------------
-; Função GPIO_Init
-; Parâmetro de entrada: Não tem
-; Parâmetro de saída: Não tem
+; Funï¿½ï¿½o GPIO_Init
+; Parï¿½metro de entrada: Nï¿½o tem
+; Parï¿½metro de saï¿½da: Nï¿½o tem
 GPIO_Init
 ;=====================
 ; 1. Ativa o clock para a porta setando o bit correspondente no registrador RCGCGPIO,
-; e após isso verifica no PRGPIO se a porta está pronta para uso.
-			LDR   R0, =SYSCTL_RCGCGPIO_R			;Carrega o endereço do registrador RCGCGPIO
+; e apï¿½s isso verifica no PRGPIO se a porta estï¿½ pronta para uso.
+			LDR   R0, =SYSCTL_RCGCGPIO_R			;Carrega o endereï¿½o do registrador RCGCGPIO
 			MOV   R1, #GPIO_PORTM					;Seta o bit da porta M
 			ORR   R1, #GPIO_PORTL					;Seta o bit da porta L
 			ORR   R1, #GPIO_PORTK					;Seta o bit da porta K
 			STR   R1, [R0]							
 
-			LDR   R0, =SYSCTL_PRGPIO_R				;Carrega o endereço do PRGPIO para esperar os GPIO ficarem prontos
+			LDR   R0, =SYSCTL_PRGPIO_R				;Carrega o endereï¿½o do PRGPIO para esperar os GPIO ficarem prontos
 EsperaGPIO  LDR   R2, [R0]							
 			TST   R1, R2							
 			BEQ   EsperaGPIO						
 			
-; 2. Limpar o AMSEL para desabilitar a analógica
+; 2. Limpar o AMSEL para desabilitar a analogica
 			MOV   R1, #0x00
 			LDR   R0, =GPIO_PORTM_AMSEL_R
 			STR   R1, [R0]
@@ -103,13 +104,13 @@ EsperaGPIO  LDR   R2, [R0]
 			LDR   R0, =GPIO_PORTK_PCTL_R
 			STR   R1, [R0]
 
-; 4. DIR para 0 se for entrada, 1 se for saída
+; 4. DIR para 0 se for entrada, 1 se for saida
 			LDR   R0, =GPIO_PORTM_DIR_R
-			MOV   R1, #2_00000111				;M2~M0 SAIDA
+			MOV   R1, #2_00000111				;M2~M0 (SAIDA) - M3~M7 (ENTRADA)
 			STR   R1, [R0]
-	
+
 			LDR   R0, =GPIO_PORTL_DIR_R
-			MOV   R1, #0x00							;L3~L0
+			MOV   R1, #0x00							;L3~L0 (ENTRADA)
 			STR   R1, [R0]
 			
 			LDR   R0, =GPIO_PORTK_DIR_R					;K7~K0
@@ -142,14 +143,14 @@ EsperaGPIO  LDR   R2, [R0]
 			
 			
 			
-; 7. Habilita resistor de pull-up interno para os pinos que verificam as linhas e colunas
+; 7. Habilita resistor de pull-up interno para os pinos que representam as linhas
 			LDR   R0, =GPIO_PORTL_PUR_R
 			MOV   R1, #2_00001111
 			STR   R1, [R0]
 			
-			LDR   R0, =GPIO_PORTM_PUR_R
-			MOV   R1, #2_11110000
-			STR   R1, [R0]
+			;LDR   R0, =GPIO_PORTM_PUR_R
+			;MOV   R1, #2_11110000
+			;STR   R1, [R0]
 
 ;retorno
 			BX    LR
@@ -157,39 +158,51 @@ EsperaGPIO  LDR   R2, [R0]
 			
 ; -------------------------------------------------------------------------------
 ; -------------------------------------------------------------------------------
-; Função PortL_Input
-; Parâmetro de entrada: Não tem
-; Parâmetro de saída: R0 --> o valor da leitura
+; Funcao PortL_Input
+; Parï¿½metro de entrada: Nï¿½o tem
+; Parï¿½metro de saï¿½da: R0 --> o valor da leitura
 PortL_Input
 	LDR	R1, =GPIO_PORTL_DATA_R		    ;Carrega o valor do offset do data register
-	LDR R0, [R1]                            ;Lê no barramento de dados dos pinos [J0]
+	LDR R0, [R1]                            ;Lï¿½ no barramento de dados dos pinos [J0]
 	BX LR									;Retorno
 
+;Recebe R0 contendo o BIT da porta M a ser configurada (4 - 7)
+PortM_Output_Teclado
+	LDR R1, =GPIO_PORTM_DIR_R			;Para configurar como saida
+	LDR R2, [R1]
+	AND R2, #0x7	;Deixa o M2-M0 e elimina o restante dos bits
+	ORR R0, R2
+	STR R0, [R1]
+	
+	LDR	R1, =GPIO_PORTM_DATA_R
+	MOV R0, #0							;Seta a porta M como 0		    
+	STR R0, [R1]                             
+	BX LR									
+	
 ; -------------------------------------------------------------------------------
-; Função PortM_Output 
-; Parâmetro de entrada: R0 
-; Parâmetro de saída: Nada
-PortM_Output
+; Funcao PortM_Output_Display 
+; Parï¿½metro de entrada: R0 
+; Parï¿½metro de saida: Nada
+PortM_Output_Display
 	LDR	R1, =GPIO_PORTM_DATA_R		    ;Carrega o valor do offset do data register
 	LDR R2, [R1]
 	BIC R2, #2_00000111                     ;Primeiro limpamos os dois bits do lido da porta R2 = R2 & 00001111
-	ORR R0, R0, R2                          ;Fazer o OR do lido pela porta com o parâmetro de entrada
+	ORR R0, R0, R2                          ;Fazer o OR do lido pela porta com o parametro de entrada
 	STR R0, [R1]                            ;Escreve na porta D o barramento de dados do pino D
 	BX LR									;Retorno
 
-
 ; -------------------------------------------------------------------------------
-; Função PortK_Output
-; Parâmetro de entrada: R0 -> valor para escrever no display
-; Parâmetro de saída: Nada
+; Funcao PortK_Output
+; Parï¿½metro de entrada: R0 -> valor para escrever no display
+; Parï¿½metro de saï¿½da: Nada
 PortK_Output
 	LDR	R1, =GPIO_PORTK_DATA_R		    ;Carrega o valor do offset do data register
 	LDR R2, [R1]
 	BIC R2, #2_11111111                     ;Primeiro limpamos os dois bits do lido da porta
-	ORR R0, R0, R2                          ;Fazer o OR do lido pela porta com o parâmetro de entrada
+	ORR R0, R0, R2                          ;Fazer o OR do lido pela porta com o parï¿½metro de entrada
 	STR R0, [R1]                            ;Escreve na porta D o barramento de dados do pino D
 	BX LR									;Retorno
 
 
-    ALIGN                           ; garante que o fim da seção está alinhada 
+    ALIGN                           ; garante que o fim da seï¿½ï¿½o estï¿½ alinhada 
     END                             ; fim do arquivo
