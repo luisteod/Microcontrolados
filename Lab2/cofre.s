@@ -49,6 +49,8 @@ cofre_fechando = 0x43, 0x6F, 0x66, 0x72, 0x65, 0x20, 0x66, 0x65, 0x63, 0x68, 0x6
 ;"Cofre fechado!"
 cofre_fechado = 0x43, 0x6F, 0x66, 0x72, 0x65, 0x20, 0x66, 0x65, 0x63, 0x68, 0x61, 0x64, 0x6F, 0x21, 0x00
 
+;"Cofre travado!"
+cofre_travado = 'c', 'o', 'f','r','e',' ','t','r','a','v','a','d','o','!', 0x00
 
 ;"Senha:"
 senha = 0x53, 0x65, 0x6E, 0x68, 0x61, 0x3A, 0x00
@@ -68,6 +70,8 @@ mestra = 0x4d, 0x65, 0x73, 0x74, 0x72, 0x61, 0x3a, 0x00
 ;0x0, 0x1, 0x2, 0x3
 
 
+
+
 ; -------------------------------------------------------------------------------
 ; Função main()
 Start  		
@@ -78,6 +82,7 @@ Start
 	mov r10, #0x0
 	mov r9, #0x0
 	mov r8, #0x0
+	mov r4, #0x0
 	B MainLoop
 	
 LCD_Init
@@ -153,7 +158,10 @@ LCD_Update_linha1
 	cmp r9,#0x1
 	beq Cofre_Fechado
 	
-	b Cofre_Fechando
+	cmp r9, #0x2
+	beq Cofre_Fechando
+	
+	b Cofre_Travado
 
 Cofre_Aberto
 	LDR R5, =cofre_aberto
@@ -172,8 +180,12 @@ Cofre_Fechando
 Cofre_Fechado
 	LDR R5, =cofre_fechado
 	BL STRING_TO_LCD
+	b continue_l1
 	
-
+Cofre_Travado
+	LDR R5, =cofre_travado
+	BL STRING_TO_LCD
+	
 continue_l1
 	pop{lr}
 	bx lr
@@ -187,10 +199,19 @@ LCD_Update_linha2
 	mov r0, #0xc0
     bl  LCD_SendCommand
 	bl Delay_40us
-
+	
+	cmp r9, #0x03
+	beq senha_mestra
+	
 	LDR R5, =senha
 	BL STRING_TO_LCD
+	b end_update_linha2
 	
+senha_mestra
+	LDR R5, =mestra
+	BL STRING_TO_LCD
+
+end_update_linha2
 	pop{lr}
 	bx lr
 
@@ -264,14 +285,25 @@ confere_senha
 	bne senha_invalida
 	
 	mov r9, #0x0
-	BL LCD_Init
 	mov r10, #0x0
+	BL LCD_Init
 	pop{lr}
 	bx lr
 
 senha_invalida
 	push{lr}
-	nop
+	cmp r4, #0x4
+	beq travar_cofre
+	add r4, #0x1
+	b end_senha_invalida
+	
+travar_cofre
+	mov r9, #0x3
+	BL LCD_Update_linha1
+	BL LCD_Update_linha2
+	mov r4, #0x0
+	
+end_senha_invalida
 	pop{lr}
 	bx lr
 ; Função LCD_SendCommand
