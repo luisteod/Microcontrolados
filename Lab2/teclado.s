@@ -289,7 +289,8 @@ loopL3
     BL PortL_Input
     ;Linha L3
     CMP R0, #PL3
-    MOV R0, #0 ; Se nao for nenhuma linha retorna 0
+	IT NE
+		MOVNE R0, #0 ; Se nao for nenhuma linha retorna 0
     BNE verifyEnd
     LDR R0, =0xC3500 ; Configura systick para 10ms
     BL SysTick_Wait
@@ -297,7 +298,7 @@ loopL3
     CMP R7, #BAUNCES_AMOUNT
     MOV R0, #0x8
     BEQ verifyEnd
-    B loopL2
+    B loopL3
 
 verifyEnd
 
