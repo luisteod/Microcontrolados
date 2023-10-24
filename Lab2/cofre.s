@@ -8,6 +8,7 @@
 ; -------------------------------------------------------------------------------
 ; Declarações EQU - Defines
 ENDERECO_BASE_SENHA EQU 0x20000400
+ENDERECO_SENHA_INSERIDA EQU 0x20000425
 ;<NOME>         EQU <VALOR>
 ; -------------------------------------------------------------------------------
 ; Área de Dados - Declarações de variáveis
@@ -73,14 +74,14 @@ Start
 	BL PLL_Init                 ;Chama a subrotina para alterar o clock do microcontrolador para 80MHz
 	BL SysTick_Init
 	BL GPIO_Init                ;Chama a subrotina que inicializa os GPIO
-	
-	mov r6, #0x0
+	BL LCD_Init
+	mov r10, #0x0
 	mov r9, #0x0
 	mov r8, #0x0
-	mov r10, #1    ;equivale à linha atual
-	mov r11, #0 ;equivale à coluna atual da linha
+	B MainLoop
 	
 LCD_Init
+	push{lr}
     movs r0, #0x38      
     bl  LCD_SendCommand
 	bl Delay_40us
@@ -99,16 +100,40 @@ LCD_Init
 	
 	BL LCD_Update_linha1
 	BL LCD_Update_linha2
+	pop{lr}
+	bx lr
 
-MainLoop	
+MainLoop
+	cmp r9, #0x0
+	beq aberto
+	
+	bl varredura
+	cmp r0, #0x0
+	beq MainLoop
+	
+	cmp r0, #0x23
+	bleq confere_senha
+	
+	bl armazena_senha_conf
+	mov r0, #'*'
+	bl LCD_SendData
+	mov r0, #1000
+	bl SysTick_Wait1ms
+	B MainLoop
+	
+aberto
 	BL varredura
 	cmp r0, #0x0
 	beq MainLoop
 	
 	cmp r0, #0x23
-	;beq atualiza_senha
+	beq salva_senha
 	
-	;bl coloca_digito_senha
+	bl armazena_senha_temp
+	mov r0, #'*'
+	bl LCD_SendData
+	mov r0, #1000
+	bl SysTick_Wait1ms
 	B MainLoop
 
 ; Função LCD_Update_linha1
@@ -124,6 +149,10 @@ LCD_Update_linha1
 	; ve se o letreiro esta em modo parado
 	cmp r9, #0x0
 	beq Cofre_Aberto
+	
+	cmp r9,#0x1
+	beq Cofre_Fechado
+	
 	b Cofre_Fechando
 
 Cofre_Aberto
@@ -139,7 +168,6 @@ Cofre_Fechando
 	movs r0, #0x01      ; Clear Display
     bl  LCD_SendCommand
 	bl Delay_1640us
-	;mov r11, #0
 
 Cofre_Fechado
 	LDR R5, =cofre_fechado
@@ -162,39 +190,90 @@ LCD_Update_linha2
 
 	LDR R5, =senha
 	BL STRING_TO_LCD
-	; ve se o letreiro esta em modo parado
+	
+	pop{lr}
+	bx lr
+
+armazena_senha_conf
+	push{lr}
+	cmp r10, #0x4
+	beq reinicia
+	ldr r1, =ENDERECO_BASE_SENHA
+	strb r0, [r1,r10]
+	add r10, #1
+	b volta
+	
+;funcao armazena_senha
+armazena_senha_temp
+	push{lr}
+	cmp r10, #0x4
+	beq reinicia
+	ldr r2, =ENDERECO_SENHA_INSERIDA
+	strb r0, [r2, r10]
+	add r10, #1
+
+volta
+	pop{lr}
+	bx lr
+	
+reinicia
+	BL LCD_Init
+	mov r10, #0x1
+	b volta
+;entrada
+
+salva_senha
+	push{lr}
+	mov r2, #0x0
+	mov r9, #0x2
+	mov r10, #0x0
+	ldr r1, =ENDERECO_BASE_SENHA
+	STRB r2,[r1, #0x0]
+	strb r2,[r1, #0x1]
+	strb r2,[r1, #0x2]
+	strb r2,[r1, #0x3]
+	BL LCD_Init
 	pop{lr}
 	bx lr
 
 
-;funcao coloca_digito_senha
-;entrada -> r0 digito atual
-;coloca_digito_senha
-;	push{lr}
-;	LDR R5, =senha
-;	BL STRING_TO_LCD
-;	
-;	cmp r6, #0x4
-;	beq comeca_nova_senha
-;	
-;	ldr r3, =ENDERECO_BASE_SENHA
-;	strb r0, [r3, r6]
-;	b fim_atualiza_senha
-;	
-;comeca_nova_senha
-;	mov r6, #0x0
-;	mov r0, #0xc0
-;	BL LCD_SendCommand
-;	
-;fim_atualiza_senha
-;	pop{lr}
-;	bx lr
+confere_senha
+	push{lr}
+
+	ldr r1, =ENDERECO_BASE_SENHA
+	ldr r2, =ENDERECO_SENHA_INSERIDA
 	
-
-
+	ldrb r3,[r1, #0x0]
+	ldrb r4,[r2, #0x0]
+	cmp r3, r4
+	bne senha_invalida
 	
-;funcao armazena_senha
+	ldrb r3,[r1, #0x1]
+	ldrb r4,[r2, #0x1]
+	cmp r3, r4
+	bne senha_invalida
+	
+	ldrb r3,[r1, #0x2]
+	ldrb r4,[r2, #0x2]
+	cmp r3, r4
+	bne senha_invalida
+	
+	ldrb r3,[r1, #0x3]
+	ldrb r4,[r2, #0x3]
+	cmp r3, r4
+	bne senha_invalida
+	
+	mov r9, #0x0
+	BL LCD_Init
+	mov r10, #0x0
+	pop{lr}
+	bx lr
 
+senha_invalida
+	push{lr}
+	nop
+	pop{lr}
+	bx lr
 ; Função LCD_SendCommand
 ; Rotina para enviar um comando para o LCD, utiliza os pinos de controle M2-ENABLE, M1-RW, M0-RS
 ; Parâmetro de entrada: R0 - Comando a ser enviado
