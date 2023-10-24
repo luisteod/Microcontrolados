@@ -10,32 +10,34 @@
 ENDERECO_BASE EQU 0x20000400
 BAUNCES_AMOUNT EQU 5
 
-PM4 EQU 2_00010000
-PM5 EQU 2_00100000
-PM6 EQU 2_01000000
-PM7 EQU 2_10000000
+; colunas (joga coluna como saida)
+PM4 EQU 0x10
+PM5 EQU 0x20
+PM6 EQU 0x40
+PM7 EQU 0x80
 
-PL0 EQU 2_1110 0001
-PL1 EQU 2_1101 0010
-PL2 EQU 2_1011 0100
-PL3 EQU 2_0111 1000
+; linhas (ve qual linha tem 0)
+PL0 EQU 0xE ;1110
+PL1 EQU 0xD ;1101 
+PL2 EQU 0xB ;1011 
+PL3 EQU 0x7 ;0111 
 
-TECLA_1 EQU 2_10001000
-TECLA_2 EQU 2_10000100
-TECLA_3 EQU 2_10000010
-TECLA_A EQU 2_10000001
-TECLA_4 EQU 2_01001000
-TECLA_5 EQU 2_01000100
-TECLA_6 EQU 2_01000010
-TECLA_B EQU 2_01000001
-TECLA_7 EQU 2_00101000
-TECLA_8 EQU 2_00100100
-TECLA_9 EQU 2_00100010
-TECLA_C EQU 2_00100001
-TECLA_ASTERISCO EQU 2_00011000
-TECLA_0 EQU 2_00010100
-TECLA_JOGO_DA_VELHA EQU 2_00010010
-TECLA_D EQU 2_00010001
+TECLA_1 EQU 0x11
+TECLA_2 EQU 0x21
+TECLA_3 EQU 0x41
+TECLA_A EQU 0x81
+TECLA_4 EQU 0x12
+TECLA_5 EQU 0x22
+TECLA_6 EQU 0x42
+TECLA_B EQU 0x82
+TECLA_7 EQU 0x14
+TECLA_8 EQU 0x24
+TECLA_9 EQU 0x44
+TECLA_C EQU 0x84
+TECLA_ASTERISCO EQU 0x18
+TECLA_0 EQU 0x28
+TECLA_JOGO_DA_VELHA EQU 0x48
+TECLA_D EQU 0x88
 
 NULL EQU 0x00000000
 
@@ -58,9 +60,10 @@ NULL EQU 0x00000000
         EXPORT varredura            ; Permite chamar a fun��o varredura a partir de
 									
 		; Se chamar alguma fun��o externa
-        IMPORT PortM_Output_Teclado ; Permite chamar PortM_Output_Teclado de outro arquivo	
+        IMPORT PortM_Output_Teclado ; Permite chamar PortM_Output_Teclado de outro arquivo
+	    IMPORT PortL_Input
 		IMPORT SysTick_Wait
-		IMPORT PortM_Output			; Permite chamar PortM_Output de outro arquivo
+	
 		
 									
 
@@ -70,49 +73,53 @@ NULL EQU 0x00000000
 
 
 ; varredura de teclado
-; R2 : Guarda o valor da coluna
-; R3 : Guarda o valor da linha
+; R11 : Guarda o valor da coluna
+; R12 : Guarda o valor da linha
 ; Args : None
 ; Return : R0 - O valor da tecla em ASCII (0 caso nenhuma pressionada)
 varredura
     PUSH{LR}
     ; configura pino M4 como saida
-    MOV R2, PM4
+    MOV R11, #PM4
+	MOV R0, R11
     BL PortM_Output_Teclado
     BL verifyLines
-    MOV R3, R0
-    CMP R3, #0
+    MOV R12, R0
+    CMP R12, #0
     BNE decode
 
     ; configura pino M5 como saida
-    MOV R2, PM5
+    MOV R11, #PM5
+	MOV R0, R11
     BL PortM_Output_Teclado
     BL verifyLines
-    MOV R3, R0
-    CMP R3, #0
+    MOV R12, R0
+    CMP R12, #0
     BNE decode
 
     ; configura pino M6 como saida
-    MOV R2, PM6
+    MOV R11, #PM6
+	MOV R0, R11
     BL PortM_Output_Teclado
     BL verifyLines
-    MOV R3, R0
-    CMP R3, #0
+    MOV R12, R0
+    CMP R12, #0
     BNE decode
 
     ; configura pino M7 como saida
-    MOV R2, PM7
+    MOV R11, #PM7
+	MOV R0, R11	
     BL PortM_Output_Teclado
     BL verifyLines
-    MOV R3, R0
-    CMP R3, #0
+    MOV R12, R0
+    CMP R12, #0
     BNE decode
     MOV R0, #0 ; Se nao for nenhuma tecla retorna 0
     BEQ varreduraEnd
 
 decode
-    ; L0 - L3 (COLUNAS)
-    ; M4 - M7 (LINHAS)
+    ; L0 - L3 (LINHAS)
+    ; M4 - M7 (COLUNAS)
 
     ; 1 = PL3 & PM7
     ; 2 = PL2 & PM7
@@ -131,90 +138,90 @@ decode
     ; # = PL1 & PM4
     ; D = PL0 & PM4
 
-    ORR R0, R2, R3 ; Pega resultado da linha e coluna
+    ORR R0, R11, R12 ; Pega resultado da linha e coluna
     
-    CMP R0, NULL
+    CMP R0, #NULL
     BEQ varreduraEnd
 
     ;0
-    CMP R0, TECLA_0
+    CMP R0, #TECLA_0
     IT EQ
-        MOV R0, #0x30
+        MOVEQ R0, #0x30
 
     ;1
-    CMP R0, TECLA_1
+    CMP R0, #TECLA_1
     IT EQ
-        MOV R0, #0x31
+        MOVEQ R0, #0x31
     
     ;2
-    CMP R0, TECLA_2
+    CMP R0, #TECLA_2
     IT EQ
-        MOV R0, #0x32
+        MOVEQ R0, #0x32
     
     ;3
-    CMP R0, TECLA_3
+    CMP R0, #TECLA_3
     IT EQ
-        MOV R0, #0x33
+        MOVEQ R0, #0x33
     
     ;4
-    CMP R0, TECLA_4
+    CMP R0, #TECLA_4
     IT EQ
-        MOV R0, #0x34
+        MOVEQ R0, #0x34
     
     ;5
-    CMP R0, TECLA_5
+    CMP R0, #TECLA_5
     IT EQ
-        MOV R0, #0x35
+        MOVEQ R0, #0x35
     
     ;6
-    CMP R0, TECLA_6
+    CMP R0, #TECLA_6
     IT EQ
-        MOV R0, #0x36
+        MOVEQ R0, #0x36
     
     ;7
-    CMP R0, TECLA_7
+    CMP R0, #TECLA_7
     IT EQ
-        MOV R0, #0x37
+        MOVEQ R0, #0x37
     
     ;8
-    CMP R0, TECLA_8
+    CMP R0, #TECLA_8
     IT EQ
-        MOV R0, #0x38
+        MOVEQ R0, #0x38
     
     ;9
-    CMP R0, TECLA_9
+    CMP R0, #TECLA_9
     IT EQ
-        MOV R0, #0x39
+        MOVEQ R0, #0x39
     
     ;A
-    CMP R0, TECLA_A
+    CMP R0, #TECLA_A
     IT EQ
-        MOV R0, #0x41
+        MOVEQ R0, #0x41
     
     ;B
-    CMP R0, TECLA_B
+    CMP R0, #TECLA_B
     IT EQ
-        MOV R0, #0x42
+        MOVEQ R0, #0x42
     
     ;C
-    CMP R0, TECLA_C
+    CMP R0, #TECLA_C
     IT EQ
-        MOV R0, #0x43
+        MOVEQ R0, #0x43
     
     ;D
-    CMP R0, TECLA_D
+    CMP R0, #TECLA_D
     IT EQ
-        MOV R0, #0x44
+        MOVEQ R0, #0x44
     
     ;*
-    CMP R0, TECLA_ASTERISCO
+    CMP R0, #TECLA_ASTERISCO
     IT EQ
-        MOV R0, #0x2A
+        MOVEQ R0, #0x2A
     
     ;#
-    CMP R0, TECLA_JOGO_DA_VELHA
+    CMP R0, #TECLA_JOGO_DA_VELHA
     IT EQ
-        MOV R0, #0x23
+        MOVEQ R0, #0x23
 
 varreduraEnd
     POP{LR}
@@ -233,62 +240,62 @@ verifyLines
 lineL0
     MOV R7, #0
 loopL0
-    BL PortL_Input_Teclado
+    BL PortL_Input
     ;Linha L0
-    CMP R0, PL0
+    CMP R0, #PL0
     BNE lineL1
     ; Debounce
-    MOV R0, #0xC3500 ; Configura systick para 10ms
+    LDR R0, =0xC3500 ; Configura systick para 10ms
     BL SysTick_Wait
     ADD R7, #1
-    CMP R7, BAUNCES_AMOUNT
-    MOV R0, #2_0001
+    CMP R7, #BAUNCES_AMOUNT
+    MOV R0, #0x1
     BEQ verifyEnd
     B loopL0
 
 lineL1
     MOV R7, #0
 loopL1
-    BL PortL_Input_Teclado
+    BL PortL_Input
     ;Linha L1
-    CMP R0, PL1
+    CMP R0, #PL1
     BNE lineL2
-    MOV R0, #0xC3500 ; Configura systick para 10ms
+    LDR R0, =0xC3500 ; Configura systick para 10ms
     BL SysTick_Wait
     ADD R7, #1
-    CMP R7, BAUNCES_AMOUNT
-    MOV R0, #2_0010
+    CMP R7, #BAUNCES_AMOUNT
+    MOV R0, #0x2
     BEQ verifyEnd
     B loopL1
 
 lineL2
     MOV R7, #0
 loopL2
-    BL PortL_Input_Teclado
+    BL PortL_Input
     ;Linha L2
-    CMP R0, PL2
+    CMP R0, #PL2
     BNE lineL3
-    MOV R0, #0xC3500 ; Configura systick para 10ms
+    LDR R0, =0xC3500 ; Configura systick para 10ms
     BL SysTick_Wait
     ADD  R7, #1
-    CMP R7, BAUNCES_AMOUNT
-    MOV R0, #2_0100
+    CMP R7, #BAUNCES_AMOUNT
+    MOV R0, #0x4
     BEQ verifyEnd
     B loopL2
 
 lineL3
     MOV R7, #0
 loopL3
-    BL PortL_Input_Teclado
+    BL PortL_Input
     ;Linha L3
-    CMP R0, PL3
+    CMP R0, #PL3
     MOV R0, #0 ; Se nao for nenhuma linha retorna 0
     BNE verifyEnd
-    MOV R0, #0xC3500 ; Configura systick para 10ms
+    LDR R0, =0xC3500 ; Configura systick para 10ms
     BL SysTick_Wait
     ADD R7, #1
-    CMP R7, BAUNCES_AMOUNT
-    MOV R0, #2_1000
+    CMP R7, #BAUNCES_AMOUNT
+    MOV R0, #0x8
     BEQ verifyEnd
     B loopL2
 
@@ -297,7 +304,8 @@ verifyEnd
     POP{LR}
     BX LR
 
-
+	ALIGN 
+	END
 
 
 
