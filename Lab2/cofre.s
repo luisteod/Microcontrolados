@@ -7,9 +7,32 @@
         THUMB                        ; Instruções do tipo Thumb-2
 ; -------------------------------------------------------------------------------
 ; Declarações EQU - Defines
-ENDERECO_BASE_SENHA EQU 0x20000400
+ENDERECO_BASE_SENHA 	EQU 0x20000400
 ENDERECO_SENHA_INSERIDA EQU 0x20000425
-;<NOME>         EQU <VALOR>
+
+;Endereco de variaveis globais
+ESTADO_COFRE 	EQU 0x20000450
+TENTATIVAS 		EQU 0x20000451
+CONTADOR_TECLAS	EQU	0x20000452
+
+ABERTO   EQU 0x0
+FECHADO  EQU 0x1
+TRANCADO EQU 0x2
+		
+		
+	MACRO	
+	STORE $ADDR, $VAL
+		LDR R0, =$ADDR
+		MOV R1, #$VAL
+		STR R1, [R0]
+	MEND
+
+	MACRO	
+	LOAD $ADDR
+		LDR R0, =$ADDR
+		LDR R0, [R0]
+	MEND
+
 ; -------------------------------------------------------------------------------
 ; Área de Dados - Declarações de variáveis
 		AREA  DATA, ALIGN=2
@@ -40,37 +63,47 @@ ENDERECO_SENHA_INSERIDA EQU 0x20000425
 		IMPORT PortL_Input          ; Permite chamar PortL_Input de outro arquivo
 		IMPORT varredura
 		
-;“Cofre aberto, digite nova senha para fechar o cofre”.
-cofre_aberto = 0x43, 0x6F, 0x66, 0x72, 0x65, 0x20, 0x61, 0x62, 0x65, 0x72, 0x74, 0x6F, 0x00; 0x2C, 0x20, 0x64, 0x69, 0x67, 0x69, 0x74, 0x65, 0x20, 0x6E, 0x6F, 0x76, 0x61, 0x20, 0x73, 0x65, 0x6E, 0x68, 0x61, 0x20, 0x00
+;;“Cofre aberto, digite nova senha para fechar o cofre”.
+;cofre_aberto = 0x43, 0x6F, 0x66, 0x72, 0x65, 0x20, 0x61, 0x62, 0x65, 0x72, 0x74, 0x6F, 0x00; 0x2C, 0x20, 0x64, 0x69, 0x67, 0x69, 0x74, 0x65, 0x20, 0x6E, 0x6F, 0x76, 0x61, 0x20, 0x73, 0x65, 0x6E, 0x68, 0x61, 0x20, 0x00
 
-;"Cofre fechando..."
-cofre_fechando = 0x43, 0x6F, 0x66, 0x72, 0x65, 0x20, 0x66, 0x65, 0x63, 0x68, 0x61, 0x6E, 0x64, 0x6F, 0x00
+;;"Cofre fechando..."
+;cofre_fechando = 0x43, 0x6F, 0x66, 0x72, 0x65, 0x20, 0x66, 0x65, 0x63, 0x68, 0x61, 0x6E, 0x64, 0x6F, 0x00
 
-;"Cofre fechado!"
-cofre_fechado = 0x43, 0x6F, 0x66, 0x72, 0x65, 0x20, 0x66, 0x65, 0x63, 0x68, 0x61, 0x64, 0x6F, 0x21, 0x00
+;;"Cofre fechado!"
+;cofre_fechado = 0x43, 0x6F, 0x66, 0x72, 0x65, 0x20, 0x66, 0x65, 0x63, 0x68, 0x61, 0x64, 0x6F, 0x21, 0x00
 
-;"Cofre travado!"
-cofre_travado = 'c', 'o', 'f','r','e',' ','t','r','a','v','a','d','o','!', 0x00
+;;"Cofre travado!"
+;cofre_travado = 'c', 'o', 'f','r','e',' ','t','r','a','v','a','d','o','!', 0x00
 
-;"Senha:"
-senha = 0x53, 0x65, 0x6E, 0x68, 0x61, 0x3A, 0x00
+;;"Senha:"
+;senha = 0x53, 0x65, 0x6E, 0x68, 0x61, 0x3A, 0x00
 
-;"Mestra:"
-mestra = 0x4d, 0x65, 0x73, 0x74, 0x72, 0x61, 0x3a, 0x00
-;estados do cofre -> R9
-;0x0 = aberto
-;0x1 = fechando
-;0x2 = fechado
+;;"Mestra:"
+;mestra = 0x4d, 0x65, 0x73, 0x74, 0x72, 0x61, 0x3a, 0x00
+;;estados do cofre -> R9
+;;0x0 = aberto
+;;0x1 = fechando
+;;0x2 = fechado
 
-;estados do LCD -> R8
-;0x0 = parado
-;0x1 = correndo
+;;estados do LCD -> R8
+;;0x0 = parado
+;;0x1 = correndo
 
-;digito_atual_senha -> R6
-;0x0, 0x1, 0x2, 0x3
+;;digito_atual_senha -> R6
+;;0x0, 0x1, 0x2, 0x3
 
 
+globalVarsInit
+	PUSH{LR}
+	
+	STORE ESTADO_COFRE, ABERTO
+	STORE TENTATIVAS, 0
+	STORE CONTADOR_TECLAS, 10
 
+	POP{LR}
+	BX LR
+	
+	
 
 ; -------------------------------------------------------------------------------
 ; Função main()
@@ -78,234 +111,240 @@ Start
 	BL PLL_Init                 ;Chama a subrotina para alterar o clock do microcontrolador para 80MHz
 	BL SysTick_Init
 	BL GPIO_Init                ;Chama a subrotina que inicializa os GPIO
-	BL LCD_Init
-	mov r10, #0x0
-	mov r9, #0x0
-	mov r8, #0x0
-	mov r4, #0x0
-	B MainLoop
+	BL globalVarsInit
 	
-LCD_Init
-	push{lr}
-    movs r0, #0x38      
-    bl  LCD_SendCommand
-	bl Delay_40us
+	
+	
+;	BL LCD_Init
+;	mov r10, #0x0
+;	mov r9, #0x0
+;	mov r8, #0x0
+;	mov r4, #0x0
+;	B MainLoop
+	
+;LCD_Init
+;	push{lr}
+;    movs r0, #0x38      
+;    bl  LCD_SendCommand
+;	bl Delay_40us
 
-    movs r0, #0x0D      ; Display ON/OFF Control (Display on, Cursor off, Blinking off)
-    bl  LCD_SendCommand
-	bl Delay_40us
-	
-	movs r0, #0x01      ; Clear Display
-    bl  LCD_SendCommand
-	bl Delay_1640us
+;    movs r0, #0x0D      ; Display ON/OFF Control (Display on, Cursor off, Blinking off)
+;    bl  LCD_SendCommand
+;	bl Delay_40us
+;	
+;	movs r0, #0x01      ; Clear Display
+;    bl  LCD_SendCommand
+;	bl Delay_1640us
 
-    movs r0, #0x06    ; Entry Mode Set (Increment cursor, no display shift)
-    bl  LCD_SendCommand
-	bl Delay_40us
-	
-	BL LCD_Update_linha1
-	BL LCD_Update_linha2
-	pop{lr}
-	bx lr
+;    movs r0, #0x06    ; Entry Mode Set (Increment cursor, no display shift)
+;    bl  LCD_SendCommand
+;	bl Delay_40us
+;	
+;	BL LCD_Update_linha1
+;	BL LCD_Update_linha2
+;	pop{lr}
+;	bx lr
 
-MainLoop
-	cmp r9, #0x0
-	beq aberto
-	
-	bl varredura
-	cmp r0, #0x0
-	beq MainLoop
-	
-	cmp r0, #0x23
-	bleq confere_senha
-	
-	bl armazena_senha_conf
-	mov r0, #'*'
-	bl LCD_SendData
-	mov r0, #1000
-	bl SysTick_Wait1ms
-	B MainLoop
-	
-aberto
-	BL varredura
-	cmp r0, #0x0
-	beq MainLoop
-	
-	cmp r0, #0x23
-	beq salva_senha
-	
-	bl armazena_senha_temp
-	mov r0, #'*'
-	bl LCD_SendData
-	mov r0, #1000
-	bl SysTick_Wait1ms
-	B MainLoop
+;MainLoop
+;	cmp r9, #0x0
+;	beq aberto
+;	
+;	bl varredura
+;	cmp r0, #0x0
+;	beq MainLoop
+;	
+;	cmp r0, #0x23
+;	bleq confere_senha
+;	
+;	bl armazena_senha_conf
+;	mov r0, #'*'
+;	bl LCD_SendData
+;	mov r0, #1000
+;	bl SysTick_Wait1ms
+;	B MainLoop
+;	
+;aberto
+;	BL varredura
+;	cmp r0, #0x0
+;	beq MainLoop
+;	
+;	cmp r0, #0x23
+;	beq salva_senha
+;	
+;	bl armazena_senha_temp
+;	mov r0, #'*'
+;	bl LCD_SendData
+;	mov r0, #1000
+;	bl SysTick_Wait1ms
+;	B MainLoop
 
-; Função LCD_Update_linha1
-; Rotina para enviar um comando para o LCD, utiliza os pinos de controle M2-ENABLE, M1-RW, M0-RS
-; Parâmetro de entrada: R0 - Comando a ser enviado
-; Parâmetro de saída: Não tem
-LCD_Update_linha1
-	push{lr}
+;; Função LCD_Update_linha1
+;; Rotina para enviar um comando para o LCD, utiliza os pinos de controle M2-ENABLE, M1-RW, M0-RS
+;; Parâmetro de entrada: R0 - Comando a ser enviado
+;; Parâmetro de saída: Não tem
+;LCD_Update_linha1
+;	push{lr}
 
-	mov r0, #0x80
-	bl  LCD_SendCommand
-	bl Delay_40us
-	; ve se o letreiro esta em modo parado
-	cmp r9, #0x0
-	beq Cofre_Aberto
-	
-	cmp r9,#0x1
-	beq Cofre_Fechado
-	
-	cmp r9, #0x2
-	beq Cofre_Fechando
-	
-	b Cofre_Travado
+;	mov r0, #0x80
+;	bl  LCD_SendCommand
+;	bl Delay_40us
+;	; ve se o letreiro esta em modo parado
+;	cmp r9, #0x0
+;	beq Cofre_Aberto
+;	
+;	cmp r9,#0x1
+;	beq Cofre_Fechado
+;	
+;	cmp r9, #0x2
+;	beq Cofre_Fechando
+;	
+;	b Cofre_Travado
 
-Cofre_Aberto
-	LDR R5, =cofre_aberto
-	BL STRING_TO_LCD
-	B continue_l1
+;Cofre_Aberto
+;	LDR R5, =cofre_aberto
+;	BL STRING_TO_LCD
+;	B continue_l1
 
-Cofre_Fechando
-	LDR R5, =cofre_fechando
-	BL STRING_TO_LCD
-	mov r0, #5000
-	bl SysTick_Wait1ms
-	movs r0, #0x01      ; Clear Display
-    bl  LCD_SendCommand
-	bl Delay_1640us
+;Cofre_Fechando
+;	LDR R5, =cofre_fechando
+;	BL STRING_TO_LCD
+;	mov r0, #5000
+;	bl SysTick_Wait1ms
+;	movs r0, #0x01      ; Clear Display
+;    bl  LCD_SendCommand
+;	bl Delay_1640us
 
-Cofre_Fechado
-	LDR R5, =cofre_fechado
-	BL STRING_TO_LCD
-	b continue_l1
-	
-Cofre_Travado
-	LDR R5, =cofre_travado
-	BL STRING_TO_LCD
-	
-continue_l1
-	pop{lr}
-	bx lr
-  
-; Função LCD_Update_linha2
-; Rotina para enviar um comando para o LCD, utiliza os pinos de controle M2-ENABLE, M1-RW, M0-RS
-; Parâmetro de entrada: R0 - Comando a ser enviado
-; Parâmetro de saída: Não tem
-LCD_Update_linha2
-	push{lr}
-	mov r0, #0xc0
-    bl  LCD_SendCommand
-	bl Delay_40us
-	
-	cmp r9, #0x03
-	beq senha_mestra
-	
-	LDR R5, =senha
-	BL STRING_TO_LCD
-	b end_update_linha2
-	
-senha_mestra
-	LDR R5, =mestra
-	BL STRING_TO_LCD
+;Cofre_Fechado
+;	LDR R5, =cofre_fechado
+;	BL STRING_TO_LCD
+;	b continue_l1
+;	
+;Cofre_Travado
+;	LDR R5, =cofre_travado
+;	BL STRING_TO_LCD
+;	
+;continue_l1
+;	pop{lr}
+;	bx lr
+;  
+;; Função LCD_Update_linha2
+;; Rotina para enviar um comando para o LCD, utiliza os pinos de controle M2-ENABLE, M1-RW, M0-RS
+;; Parâmetro de entrada: R0 - Comando a ser enviado
+;; Parâmetro de saída: Não tem
+;LCD_Update_linha2
+;	push{lr}
+;	mov r0, #0xc0
+;    bl  LCD_SendCommand
+;	bl Delay_40us
+;	
+;	cmp r9, #0x03
+;	beq senha_mestra
+;	
+;	LDR R5, =senha
+;	BL STRING_TO_LCD
+;	b end_update_linha2
+;	
+;senha_mestra
+;	LDR R5, =mestra
+;	BL STRING_TO_LCD
 
-end_update_linha2
-	pop{lr}
-	bx lr
+;end_update_linha2
+;	pop{lr}
+;	bx lr
 
-armazena_senha_conf
-	push{lr}
-	cmp r10, #0x4
-	beq reinicia
-	ldr r1, =ENDERECO_BASE_SENHA
-	strb r0, [r1,r10]
-	add r10, #1
-	b volta
-	
-;funcao armazena_senha
-armazena_senha_temp
-	push{lr}
-	cmp r10, #0x4
-	beq reinicia
-	ldr r2, =ENDERECO_SENHA_INSERIDA
-	strb r0, [r2, r10]
-	add r10, #1
+;armazena_senha_conf
+;	push{lr}
+;	cmp r10, #0x4
+;	beq reinicia
+;	ldr r1, =ENDERECO_BASE_SENHA
+;	strb r0, [r1,r10]
+;	add r10, #1
+;	b volta
+;	
+;;funcao armazena_senha
+;armazena_senha_temp
+;	push{lr}
+;	cmp r10, #0x4
+;	beq reinicia
+;	ldr r2, =ENDERECO_SENHA_INSERIDA
+;	strb r0, [r2, r10]
+;	add r10, #1
 
-volta
-	pop{lr}
-	bx lr
-	
-reinicia
-	BL LCD_Init
-	mov r10, #0x1
-	b volta
-;entrada
+;volta
+;	pop{lr}
+;	bx lr
+;	
+;reinicia
+;	BL LCD_Init
+;	mov r10, #0x1
+;	b volta
+;;entrada
 
-salva_senha
-	push{lr}
-	mov r2, #0x0
-	mov r9, #0x2
-	mov r10, #0x0
-	ldr r1, =ENDERECO_BASE_SENHA
-	STRB r2,[r1, #0x0]
-	strb r2,[r1, #0x1]
-	strb r2,[r1, #0x2]
-	strb r2,[r1, #0x3]
-	BL LCD_Init
-	pop{lr}
-	bx lr
+;salva_senha
+;	push{lr}
+;	mov r2, #0x0
+;	mov r9, #0x2
+;	mov r10, #0x0
+;	ldr r1, =ENDERECO_BASE_SENHA
+;	STRB r2,[r1, #0x0]
+;	strb r2,[r1, #0x1]
+;	strb r2,[r1, #0x2]
+;	strb r2,[r1, #0x3]
+;	BL LCD_Init
+;	pop{lr}
+;	bx lr
 
 
-confere_senha
-	push{lr}
+;confere_senha
+;	push{lr}
 
-	ldr r1, =ENDERECO_BASE_SENHA
-	ldr r2, =ENDERECO_SENHA_INSERIDA
-	
-	ldrb r3,[r1, #0x0]
-	ldrb r4,[r2, #0x0]
-	cmp r3, r4
-	bne senha_invalida
-	
-	ldrb r3,[r1, #0x1]
-	ldrb r4,[r2, #0x1]
-	cmp r3, r4
-	bne senha_invalida
-	
-	ldrb r3,[r1, #0x2]
-	ldrb r4,[r2, #0x2]
-	cmp r3, r4
-	bne senha_invalida
-	
-	ldrb r3,[r1, #0x3]
-	ldrb r4,[r2, #0x3]
-	cmp r3, r4
-	bne senha_invalida
-	
-	mov r9, #0x0
-	mov r10, #0x0
-	BL LCD_Init
-	pop{lr}
-	bx lr
+;	ldr r1, =ENDERECO_BASE_SENHA
+;	ldr r2, =ENDERECO_SENHA_INSERIDA
+;	
+;	ldrb r3,[r1, #0x0]
+;	ldrb r4,[r2, #0x0]
+;	cmp r3, r4
+;	bne senha_invalida
+;	
+;	ldrb r3,[r1, #0x1]
+;	ldrb r4,[r2, #0x1]
+;	cmp r3, r4
+;	bne senha_invalida
+;	
+;	ldrb r3,[r1, #0x2]
+;	ldrb r4,[r2, #0x2]
+;	cmp r3, r4
+;	bne senha_invalida
+;	
+;	ldrb r3,[r1, #0x3]
+;	ldrb r4,[r2, #0x3]
+;	cmp r3, r4
+;	bne senha_invalida
+;	
+;	mov r9, #0x0
+;	mov r10, #0x0
+;	BL LCD_Init
+;	pop{lr}
+;	bx lr
 
-senha_invalida
-	push{lr}
-	cmp r4, #0x4
-	beq travar_cofre
-	add r4, #0x1
-	b end_senha_invalida
-	
-travar_cofre
-	mov r9, #0x3
-	BL LCD_Update_linha1
-	BL LCD_Update_linha2
-	mov r4, #0x0
-	
-end_senha_invalida
-	pop{lr}
-	bx lr
+;senha_invalida
+;	push{lr}
+;	cmp r4, #0x4
+;	beq travar_cofre
+;	add r4, #0x1
+;	b end_senha_invalida
+;	
+;travar_cofre
+;	mov r9, #0x3
+;	BL LCD_Update_linha1
+;	BL LCD_Update_linha2
+;	mov r4, #0x0
+;	
+;end_senha_invalida
+;	pop{lr}
+;	bx lr
+
+
 ; Função LCD_SendCommand
 ; Rotina para enviar um comando para o LCD, utiliza os pinos de controle M2-ENABLE, M1-RW, M0-RS
 ; Parâmetro de entrada: R0 - Comando a ser enviado
