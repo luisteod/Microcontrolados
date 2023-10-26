@@ -21,16 +21,27 @@ TRANCADO EQU 0x2
 		
 		
 	MACRO	
-	STORE $ADDR, $VAL
-		LDR R0, =$ADDR
-		MOV R1, #$VAL
-		STR R1, [R0]
+	STORE $ADDR, $VAL 	;STORE {ADDR=DEFINE} , {VAL=R1} 
+		LDR R0, =$ADDR		
+		STR $VAL, [R0]
 	MEND
-
+	
 	MACRO	
-	LOAD $ADDR
+	STORE_OFFSET $ADDR, $VAL, $OFFSET 	;STORE {ADDR=DEFINE} , {VAL=R}, {OFFSET=R} 
 		LDR R0, =$ADDR
-		LDR R0, [R0]
+		STR $VAL, [R0,$OFFSET]
+	MEND
+	
+	MACRO 
+	LOAD $ADDR, $RET ;LOAD {ADDR=DEFINE}
+		LDR R0, =$ADDR
+		LDR $RET, [R0]
+	MEND
+	
+	MACRO	
+	LOAD_OFFSET $ADDR, $RET , $OFFSET ;LOAD {ADDR=DEFINE}, {OFFSET=R2}
+		LDR R0, =$ADDR
+		LDR $RET, [R0,$OFFSET]
 	MEND
 
 ; -------------------------------------------------------------------------------
@@ -61,7 +72,7 @@ TRANCADO EQU 0x2
 		IMPORT PortK_Output			; Permite chamar PortK_Output de outro arquivo
 		IMPORT PortM_Output_Display		; Permite chamar PortM_Output de outro arquivo
 		IMPORT PortL_Input          ; Permite chamar PortL_Input de outro arquivo
-		IMPORT varredura
+		IMPORT keyboardRead
 		
 ;;“Cofre aberto, digite nova senha para fechar o cofre”.
 ;cofre_aberto = 0x43, 0x6F, 0x66, 0x72, 0x65, 0x20, 0x61, 0x62, 0x65, 0x72, 0x74, 0x6F, 0x00; 0x2C, 0x20, 0x64, 0x69, 0x67, 0x69, 0x74, 0x65, 0x20, 0x6E, 0x6F, 0x76, 0x61, 0x20, 0x73, 0x65, 0x6E, 0x68, 0x61, 0x20, 0x00
@@ -96,14 +107,30 @@ TRANCADO EQU 0x2
 globalVarsInit
 	PUSH{LR}
 	
-	STORE ESTADO_COFRE, ABERTO
-	STORE TENTATIVAS, 0
-	STORE CONTADOR_TECLAS, 10
+	MOV R1, #ABERTO
+	STORE ESTADO_COFRE, R1
+	MOV R1, #0
+	STORE TENTATIVAS, R1 
+	STORE CONTADOR_TECLAS, R1
 
 	POP{LR}
 	BX LR
-	
-	
+
+; Args : R0 - Char a ser salvo
+; Scopo dos Regs :
+;	R10 - Valor ah ser salvo
+;	R1	- Valor do contador de teclas
+salvaChar
+	PUSH{LR}
+	MOV R10, R0
+	LOAD CONTADOR_TECLAS, R1
+	STORE_OFFSET ENDERECO_BASE_SENHA, R10, R1 
+	;Incrementa contador de teclas
+	ADD R1, #1
+	STORE CONTADOR_TECLAS,R1
+	POP{LR}
+	BX LR
+
 
 ; -------------------------------------------------------------------------------
 ; Função main()
@@ -112,8 +139,14 @@ Start
 	BL SysTick_Init
 	BL GPIO_Init                ;Chama a subrotina que inicializa os GPIO
 	BL globalVarsInit
+
+mainLoop
+	BL keyboardRead
+	CMP R0, #0
+	BLNE salvaChar
+	B mainLoop
 	
-	
+		
 	
 ;	BL LCD_Init
 ;	mov r10, #0x0

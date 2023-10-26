@@ -64,7 +64,7 @@ NULL EQU 0x00000000
 ;                  c�digo
         AREA    |.text|, CODE, READONLY, ALIGN=2
 
-        EXPORT varredura            ; Permite chamar a fun��o varredura a partir de
+        EXPORT keyboardRead            ; Permite chamar a fun��o varredura a partir de
 									
 		; Se chamar alguma fun��o externa
         IMPORT PortM_Output_Teclado ; Permite chamar PortM_Output_Teclado de outro arquivo
@@ -77,7 +77,7 @@ NULL EQU 0x00000000
 ; R12 : Guarda o valor da linha
 ; Args : None
 ; Return : R0 - O valor da tecla em ASCII (0 caso nenhuma pressionada)
-varredura
+keyboardRead
     PUSH{LR}
     ; configura pino M4 como saida
     MOV R11, #PM4
@@ -89,7 +89,7 @@ varredura
     MOV R12, R0
     CMP R12, #NULL
     BLNE decode
-	BNE varreduraEnd
+	BNE keyBoardDelay
 	
 
     ; configura pino M5 como saida
@@ -102,7 +102,7 @@ varredura
     MOV R12, R0
     CMP R12, #NULL
     BLNE decode
-	BNE varreduraEnd
+	BNE keyBoardDelay
 
     ; configura pino M6 como saida
     MOV R11, #PM6
@@ -114,7 +114,7 @@ varredura
     MOV R12, R0
     CMP R12, #NULL
     BLNE decode
-	BNE varreduraEnd
+	BNE keyBoardDelay
 
     ; configura pino M7 como saida
     MOV R11, #PM7
@@ -126,12 +126,19 @@ varredura
     MOV R12, R0
     CMP R12, #NULL
     BLNE decode
-	BNE varreduraEnd
+	BNE keyBoardDelay
 	
     MOV R0, #NULL ; Se nao for nenhuma tecla retorna 0
+	B keyBoardNoDelay
     
 	
-varreduraEnd
+keyBoardDelay
+	MOV R10,R0
+	MOV R0,#500
+	BL SysTick_Wait1ms
+	MOV R0,R10
+
+keyBoardNoDelay
     POP{LR}
     BX LR
 
@@ -218,9 +225,6 @@ decode
     PUSH{LR}
 
     ORR R0, R11, R12 ; Pega resultado da linha e coluna
-    
-    CMP R0, #NULL
-    BEQ varreduraEnd
 
     ;0
     CMP R0, #TECLA_0
