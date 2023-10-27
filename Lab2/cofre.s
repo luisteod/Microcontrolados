@@ -188,6 +188,8 @@ verifyPressJogoVelhaFechado
 	STORE ESTADO_COFRE, R1
 	MOV R1,#0
 	STORE CONTADOR_TECLAS,R1
+	MOV R1,#0
+	STORE TENTATIVAS,R1
 	B fechadoEnd
 
 errouSenha
