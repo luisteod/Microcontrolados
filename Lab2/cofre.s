@@ -11,9 +11,9 @@ ENDERECO_BASE_SENHA 	EQU 0x20000400
 ENDERECO_SENHA_INSERIDA EQU 0x20000425
 
 ;Endereco de variaveis globais
-ESTADO_COFRE 	EQU 0x20000450
-TENTATIVAS 		EQU 0x20000451
-CONTADOR_TECLAS	EQU	0x20000452
+ESTADO_COFRE 	EQU 0x20000410
+TENTATIVAS 		EQU 0x20000420
+CONTADOR_TECLAS	EQU	0x20000430
 
 ABERTO   EQU 0x0
 FECHADO  EQU 0x1
@@ -131,7 +131,39 @@ salvaChar
 	POP{LR}
 	BX LR
 
+aberto
+	PUSH{LR}
 
+	LOAD CONTADOR_TECLAS,R1
+	CMP R1,#4	
+	BEQ verifyPressJogoVelha
+	BL keyboardRead
+	CMP R0,#0
+	BLNE salvaChar
+	B abertoEnd
+
+verifyPressJogoVelha
+	BL keyboardRead
+	CMP R0, #'#'
+	BNE abertoEnd
+	MOV R1,#FECHADO
+	STORE ESTADO_COFRE, R1
+
+abertoEnd
+	POP{LR}
+	BX LR
+
+fechado
+	PUSH{LR}
+	NOP
+	POP{LR}
+	BX LR	
+
+trancado
+	PUSH{LR}
+	NOP
+	POP{LR}
+	BX LR	
 ; -------------------------------------------------------------------------------
 ; Função main()
 Start  		
@@ -141,9 +173,14 @@ Start
 	BL globalVarsInit
 
 mainLoop
-	BL keyboardRead
-	CMP R0, #0
-	BLNE salvaChar
+	LOAD ESTADO_COFRE,R1
+	CMP R1, #ABERTO
+	BLEQ aberto
+	CMP R1, #FECHADO
+	BLEQ fechado
+	CMP R1, #TRANCADO
+	BLEQ trancado
+	
 	B mainLoop
 	
 		

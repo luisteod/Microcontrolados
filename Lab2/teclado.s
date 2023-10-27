@@ -89,6 +89,7 @@ keyboardRead
     MOV R12, R0
     CMP R12, #NULL
     BLNE decode
+	CMP R0, #0
 	BNE keyBoardDelay
 	
 
@@ -102,6 +103,7 @@ keyboardRead
     MOV R12, R0
     CMP R12, #NULL
     BLNE decode
+	CMP R0, #0
 	BNE keyBoardDelay
 
     ; configura pino M6 como saida
@@ -114,6 +116,7 @@ keyboardRead
     MOV R12, R0
     CMP R12, #NULL
     BLNE decode
+	CMP R0, #0
 	BNE keyBoardDelay
 
     ; configura pino M7 como saida
@@ -126,6 +129,7 @@ keyboardRead
     MOV R12, R0
     CMP R12, #NULL
     BLNE decode
+	CMP R0, #0
 	BNE keyBoardDelay
 	
     MOV R0, #NULL ; Se nao for nenhuma tecla retorna 0
