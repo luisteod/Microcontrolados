@@ -188,9 +188,27 @@ verifyPressJogoVelhaFechado
 	STORE ESTADO_COFRE, R1
 	MOV R1,#0
 	STORE CONTADOR_TECLAS,R1
+	B fechadoEnd
 
 errouSenha
-	NOP
+	MOV R1,#0
+	STORE CONTADOR_TECLAS,R1
+	; incrementa tentativas
+	; estourou? vai pro estado travado
+	LOAD TENTATIVAS, R1
+	CMP R1,#2
+	BEQ tranca
+	ADD R1, #1
+	STORE TENTATIVAS, R1
+	B fechadoEnd
+
+tranca
+	MOV R1,#0
+	STORE TENTATIVAS,R1
+	MOV R1, #TRANCADO
+	STORE ESTADO_COFRE,R1
+	
+	
 fechadoEnd
 	POP{LR}
 	BX LR	
