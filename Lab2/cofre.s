@@ -8,12 +8,12 @@
 ; -------------------------------------------------------------------------------
 ; Declarações EQU - Defines
 ENDERECO_BASE_SENHA 	EQU 0x20000400
-ENDERECO_SENHA_INSERIDA EQU 0x20000425
+ENDERECO_SENHA_ABERTURA EQU 0x20000410
 
 ;Endereco de variaveis globais
-ESTADO_COFRE 	EQU 0x20000410
-TENTATIVAS 		EQU 0x20000420
-CONTADOR_TECLAS	EQU	0x20000430
+ESTADO_COFRE 	EQU 0x20000420
+TENTATIVAS 		EQU 0x20000430
+CONTADOR_TECLAS	EQU	0x20000440
 
 ABERTO   EQU 0x0
 FECHADO  EQU 0x1
@@ -120,11 +120,22 @@ globalVarsInit
 ; Scopo dos Regs :
 ;	R10 - Valor ah ser salvo
 ;	R1	- Valor do contador de teclas
-salvaChar
+salvaCharAberto
 	PUSH{LR}
 	MOV R10, R0
 	LOAD CONTADOR_TECLAS, R1
 	STORE_OFFSET ENDERECO_BASE_SENHA, R10, R1 
+	;Incrementa contador de teclas
+	ADD R1, #1
+	STORE CONTADOR_TECLAS,R1
+	POP{LR}
+	BX LR
+	
+salvaCharFechado
+	PUSH{LR}
+	MOV R10, R0
+	LOAD CONTADOR_TECLAS, R1
+	STORE_OFFSET ENDERECO_SENHA_ABERTURA, R10, R1 
 	;Incrementa contador de teclas
 	ADD R1, #1
 	STORE CONTADOR_TECLAS,R1
@@ -136,18 +147,20 @@ aberto
 
 	LOAD CONTADOR_TECLAS,R1
 	CMP R1,#4	
-	BEQ verifyPressJogoVelha
+	BEQ verifyPressJogoVelhaAberto
 	BL keyboardRead
 	CMP R0,#0
-	BLNE salvaChar
+	BLNE salvaCharAberto
 	B abertoEnd
 
-verifyPressJogoVelha
+verifyPressJogoVelhaAberto
 	BL keyboardRead
 	CMP R0, #'#'
 	BNE abertoEnd
 	MOV R1,#FECHADO
 	STORE ESTADO_COFRE, R1
+	MOV R1,#0
+	STORE CONTADOR_TECLAS, R1
 
 abertoEnd
 	POP{LR}
@@ -155,7 +168,30 @@ abertoEnd
 
 fechado
 	PUSH{LR}
+	LOAD CONTADOR_TECLAS,R1
+	CMP R1,#4	
+	BEQ verifyPressJogoVelhaFechado
+	BL keyboardRead
+	CMP R0,#0
+	BLNE salvaCharFechado
+	B fechadoEnd
+
+verifyPressJogoVelhaFechado
+	BL keyboardRead
+	CMP R0, #'#'
+	BNE fechadoEnd
+	LOAD ENDERECO_BASE_SENHA,R1
+	LOAD ENDERECO_SENHA_ABERTURA,R2
+	CMP R1,R2
+	BNE errouSenha
+	MOV R1,#ABERTO
+	STORE ESTADO_COFRE, R1
+	MOV R1,#0
+	STORE CONTADOR_TECLAS,R1
+
+errouSenha
 	NOP
+fechadoEnd
 	POP{LR}
 	BX LR	
 
