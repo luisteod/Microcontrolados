@@ -54,7 +54,40 @@ GPIO_PORTL_DEN_R     	EQU    	0x4006251C
 GPIO_PORTL_PUR_R     	EQU    	0x40062510 ;NECESSITA RESISTOR DE PULLUP INTERNO ATIVO
 GPIO_PORTL_DATA_R    	EQU    	0x400623FC
 GPIO_PORTL              EQU    	2_0000010000000000
+
+; PORT J
+GPIO_PORTJ_LOCK_R    	EQU    	0x40060520
+GPIO_PORTJ_CR_R      	EQU    	0x40060524
+GPIO_PORTJ_AMSEL_R   	EQU    	0x40060528
+GPIO_PORTJ_PCTL_R    	EQU    	0x4006052C
+GPIO_PORTJ_DIR_R     	EQU    	0x40060400
+GPIO_PORTJ_AFSEL_R   	EQU    	0x40060420
+GPIO_PORTJ_DEN_R     	EQU    	0x4006051C
+GPIO_PORTJ_PUR_R     	EQU    	0x40060510
+GPIO_PORTJ_DATA_R    	EQU    	0x400603FC
+GPIO_PORTJ_AHB_IM_R		EQU    0x40060410
+GPIO_PORTJ_AHB_IS_R     EQU	   0x40060404
+GPIO_PORTJ_AHB_IBE_R 	EQU	   0x40060408
+GPIO_PORTJ_AHB_IEV_R 	EQU	   0x4006040C
+GPIO_PORTJ_AHB_ICR_R 	EQU	   0x4006041C
+GPIO_PORTJ_AHB_RIS_R    EQU	   0x40060414
+GPIO_PORTJ              EQU    	2_0000000100000000
+
+; PORT N
+GPIO_PORTN_LOCK_R    	EQU    0x40064520
+GPIO_PORTN_CR_R      	EQU    0x40064524
+GPIO_PORTN_AMSEL_R   	EQU    0x40064528
+GPIO_PORTN_PCTL_R    	EQU    0x4006452C
+GPIO_PORTN_DIR_R     	EQU    0x40064400
+GPIO_PORTN_AFSEL_R   	EQU    0x40064420
+GPIO_PORTN_DEN_R     	EQU    0x4006451C
+GPIO_PORTN_PUR_R     	EQU    0x40064510	
+GPIO_PORTN_DATA_R    	EQU    0x400643FC
+GPIO_PORTN_DATA_BITS_R  EQU    0x40064000
+GPIO_PORTN               	EQU    2_001000000000000
 	
+NVIC_EN1_R                  EQU    0xE000E104
+NVIC_PRI12_R                EQU    0xE000E430
 
 ; -------------------------------------------------------------------------------
 ; �rea de C�digo - Tudo abaixo da diretiva a seguir ser� armazenado na mem�ria de 
@@ -62,10 +95,13 @@ GPIO_PORTL              EQU    	2_0000010000000000
 			AREA    |.text|, CODE, READONLY, ALIGN=2
 	
 			EXPORT GPIO_Init
+			EXPORT Interrupt_init
+			EXPORT GPIOPortJ_Handler
 			EXPORT PortK_Output			; Permite chamar PortK_Output de outro arquivo
 			EXPORT PortM_Output_Display ; Permite chamar PortM_Output_Display de outro arquivo
 			EXPORT PortM_Output_Teclado
 			EXPORT PortL_Input          ; Permite chamar PortL_Input de outro arquivo
+			
 
 ;--------------------------------------------------------------------------------
 ; Fun��o GPIO_Init
@@ -79,6 +115,7 @@ GPIO_Init
 			MOV   R1, #GPIO_PORTM					;Seta o bit da porta M
 			ORR   R1, #GPIO_PORTL					;Seta o bit da porta L
 			ORR   R1, #GPIO_PORTK					;Seta o bit da porta K
+			ORR   R1, #GPIO_PORTJ
 			STR   R1, [R0]							
 
 			LDR   R0, =SYSCTL_PRGPIO_R				;Carrega o endere�o do PRGPIO para esperar os GPIO ficarem prontos
@@ -94,6 +131,8 @@ EsperaGPIO  LDR   R2, [R0]
 			STR   R1, [R0]
 			LDR   R0, =GPIO_PORTK_AMSEL_R
 			STR   R1, [R0]
+			LDR   R0, =GPIO_PORTJ_AMSEL_R
+			STR   R1, [R0]
 			
 ; 3. Limpar PCTL para selecionar o GPIO
 			MOV   R1, #0x00
@@ -102,6 +141,8 @@ EsperaGPIO  LDR   R2, [R0]
 			LDR   R0, =GPIO_PORTL_PCTL_R
 			STR   R1, [R0]
 			LDR   R0, =GPIO_PORTK_PCTL_R
+			STR   R1, [R0]
+			LDR   R0, =GPIO_PORTJ_PCTL_R
 			STR   R1, [R0]
 
 ; 4. DIR para 0 se for entrada, 1 se for saida
@@ -116,6 +157,10 @@ EsperaGPIO  LDR   R2, [R0]
 			LDR   R0, =GPIO_PORTK_DIR_R					;K7~K0
 			MOV   R1, #2_11111111
 			STR   R1, [R0]
+			
+			LDR   R0, =GPIO_PORTJ_DIR_R					;J0 LEITURA
+			MOV   R1, #0x00
+			STR   R1, [R0]
 
 
 ; 5. Limpa os bits AFSEL
@@ -125,6 +170,8 @@ EsperaGPIO  LDR   R2, [R0]
 			LDR   R0, =GPIO_PORTL_AFSEL_R
 			STR   R1, [R0]
 			LDR   R0, =GPIO_PORTK_AFSEL_R
+			STR   R1, [R0]
+			LDR   R0, =GPIO_PORTJ_AFSEL_R
 			STR   R1, [R0]
 
 			
@@ -138,7 +185,11 @@ EsperaGPIO  LDR   R2, [R0]
 			STR   R1, [R0]
 			
 			LDR   R0, =GPIO_PORTK_DEN_R
-			MOV   R1, #2_11111111									;ATIVA K7~K0
+			MOV   R1, #2_11111111							;ATIVA K7~K0
+			STR   R1, [R0]
+			
+			LDR   R0, =GPIO_PORTJ_DEN_R
+			MOV   R1, #2_00000001							;ATIVA J0
 			STR   R1, [R0]
 			
 			
@@ -151,11 +202,62 @@ EsperaGPIO  LDR   R2, [R0]
 			;LDR   R0, =GPIO_PORTM_PUR_R
 			;MOV   R1, #2_11110000
 			;STR   R1, [R0]
+			
+			LDR   R0, =GPIO_PORTJ_PUR_R
+			MOV   R1, #2_00000001
+			STR   R1, [R0]
 
 ;retorno
 			BX    LR
 			
+Interrupt_init
+			MOV	R1,#0
+			LDR R0, =GPIO_PORTJ_AHB_IM_R ;DESATIVA
+			STR	R1, [R0]
 			
+			MOV R1,	#0 
+			LDR R0, =GPIO_PORTJ_AHB_IS_R ;BORDA
+			STR R1,[R0]
+			
+			MOV R1,#0
+			LDR R0, =GPIO_PORTJ_AHB_IBE_R ;UNICA
+			STR R1,[R0]
+			
+			MOV R1,#0
+			LDR R0,=GPIO_PORTJ_AHB_IEV_R ;DESCIDA
+			STR R1,[R0]
+			
+			MOV R1,#1
+			LDR R0,=GPIO_PORTJ_AHB_ICR_R ;ACK
+			STR R1,[R0]
+			
+			MOV R1,#1
+			LDR R0,=GPIO_PORTJ_AHB_IM_R ;ATIVA
+			STR R1,[R0]
+			
+			MOV R1,#1
+			LSL R1,#19
+			LDR R0,=NVIC_EN1_R
+			STR R1,[R0]
+			
+			MOV R1,#5
+			LSL R1,#29
+			LDR R0,=NVIC_PRI12_R	;PRIORIDADE
+			STR R1,[R0]
+			
+			BX LR
+
+
+GPIOPortJ_Handler
+			NOP
+InterruptEnd
+			LDR R3, =GPIO_PORTJ_AHB_ICR_R
+			MOV R1, #2_00000001						                                                  
+			STR R1, [R3]
+			
+			BX LR
+			
+	
 ; -------------------------------------------------------------------------------
 ; -------------------------------------------------------------------------------
 ; Funcao PortL_Input

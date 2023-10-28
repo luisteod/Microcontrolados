@@ -69,6 +69,8 @@ TRANCADO EQU 0x2
 		IMPORT SysTick_Wait
 		IMPORT SysTick_Wait1ms
         IMPORT GPIO_Init            ; Permite chamar GPIO_Init de outro arquivo
+		IMPORT Interrupt_init
+		IMPORT GPIOPortJ_Handler
 		IMPORT PortK_Output			; Permite chamar PortK_Output de outro arquivo
 		IMPORT PortM_Output_Display		; Permite chamar PortM_Output de outro arquivo
 		IMPORT PortL_Input          ; Permite chamar PortL_Input de outro arquivo
@@ -226,6 +228,7 @@ Start
 	BL PLL_Init                 ;Chama a subrotina para alterar o clock do microcontrolador para 80MHz
 	BL SysTick_Init
 	BL GPIO_Init                ;Chama a subrotina que inicializa os GPIO
+	BL Interrupt_init
 	BL globalVarsInit
 
 mainLoop
