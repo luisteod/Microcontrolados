@@ -89,6 +89,45 @@ GPIO_PORTN               	EQU    2_001000000000000
 NVIC_EN1_R                  EQU    0xE000E104
 NVIC_PRI12_R                EQU    0xE000E430
 
+; REDEFINICAO DE INCLUDES
+ENDERECO_BASE_SENHA 	EQU 0x20000400
+ENDERECO_SENHA_ABERTURA EQU 0x20000410
+ENDERECO_SENHA_HARD_CODED	EQU 0x20000450
+
+;Endereco de variaveis globais
+ESTADO_COFRE 	EQU 0x20000420
+TENTATIVAS 		EQU 0x20000430
+CONTADOR_TECLAS	EQU	0x20000440
+ALLOW_TYPE_TRANCADO	EQU 0x20000460
+
+ABERTO   EQU 0x0
+FECHADO  EQU 0x1
+TRANCADO EQU 0x2
+	
+	MACRO	
+	STORE $ADDR, $VAL 	;STORE {ADDR=DEFINE} , {VAL=R1} 
+		LDR R0, =$ADDR		
+		STR $VAL, [R0]
+	MEND
+	
+	MACRO	
+	STORE_OFFSET $ADDR, $VAL, $OFFSET 	;STORE {ADDR=DEFINE} , {VAL=R}, {OFFSET=R} 
+		LDR R0, =$ADDR
+		STR $VAL, [R0,$OFFSET]
+	MEND
+	
+	MACRO 
+	LOAD $ADDR, $RET ;LOAD {ADDR=DEFINE}
+		LDR R0, =$ADDR
+		LDR $RET, [R0]
+	MEND
+	
+	MACRO	
+	LOAD_OFFSET $ADDR, $RET , $OFFSET ;LOAD {ADDR=DEFINE}, {OFFSET=R2}
+		LDR R0, =$ADDR
+		LDR $RET, [R0,$OFFSET]
+	MEND
+
 ; -------------------------------------------------------------------------------
 ; �rea de C�digo - Tudo abaixo da diretiva a seguir ser� armazenado na mem�ria de 
 ;                  c�digo
@@ -102,7 +141,6 @@ NVIC_PRI12_R                EQU    0xE000E430
 			EXPORT PortM_Output_Teclado
 			EXPORT PortL_Input          ; Permite chamar PortL_Input de outro arquivo
 			
-
 ;--------------------------------------------------------------------------------
 ; Fun��o GPIO_Init
 ; Par�metro de entrada: N�o tem
@@ -249,7 +287,11 @@ Interrupt_init
 
 
 GPIOPortJ_Handler
-			NOP
+			LOAD ESTADO_COFRE,R0	
+			CMP R0,#TRANCADO
+			BNE InterruptEnd
+			MOV R1,#1
+			STORE ALLOW_TYPE_TRANCADO,R1
 InterruptEnd
 			LDR R3, =GPIO_PORTJ_AHB_ICR_R
 			MOV R1, #2_00000001						                                                  

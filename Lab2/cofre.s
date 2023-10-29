@@ -6,14 +6,17 @@
 ; -------------------------------------------------------------------------------
         THUMB                        ; Instruções do tipo Thumb-2
 ; -------------------------------------------------------------------------------
+
 ; Declarações EQU - Defines
 ENDERECO_BASE_SENHA 	EQU 0x20000400
 ENDERECO_SENHA_ABERTURA EQU 0x20000410
+ENDERECO_SENHA_HARD_CODED	EQU 0x20000450
 
 ;Endereco de variaveis globais
 ESTADO_COFRE 	EQU 0x20000420
 TENTATIVAS 		EQU 0x20000430
 CONTADOR_TECLAS	EQU	0x20000440
+ALLOW_TYPE_TRANCADO	EQU 0x20000460
 
 ABERTO   EQU 0x0
 FECHADO  EQU 0x1
@@ -75,6 +78,7 @@ TRANCADO EQU 0x2
 		IMPORT PortM_Output_Display		; Permite chamar PortM_Output de outro arquivo
 		IMPORT PortL_Input          ; Permite chamar PortL_Input de outro arquivo
 		IMPORT keyboardRead
+			
 		
 ;;“Cofre aberto, digite nova senha para fechar o cofre”.
 ;cofre_aberto = 0x43, 0x6F, 0x66, 0x72, 0x65, 0x20, 0x61, 0x62, 0x65, 0x72, 0x74, 0x6F, 0x00; 0x2C, 0x20, 0x64, 0x69, 0x67, 0x69, 0x74, 0x65, 0x20, 0x6E, 0x6F, 0x76, 0x61, 0x20, 0x73, 0x65, 0x6E, 0x68, 0x61, 0x20, 0x00
@@ -114,6 +118,10 @@ globalVarsInit
 	MOV R1, #0
 	STORE TENTATIVAS, R1 
 	STORE CONTADOR_TECLAS, R1
+	
+	;SALVA SENHA HARD CODED
+	MOV R1,#0x31313131
+	STORE ENDERECO_SENHA_HARD_CODED,R1
 
 	POP{LR}
 	BX LR
@@ -143,6 +151,18 @@ salvaCharFechado
 	STORE CONTADOR_TECLAS,R1
 	POP{LR}
 	BX LR
+
+salvaCharTrancado
+	PUSH{LR}
+	MOV R10, R0
+	LOAD CONTADOR_TECLAS, R1
+	STORE_OFFSET ENDERECO_SENHA_ABERTURA, R10, R1 
+	;Incrementa contador de teclas
+	ADD R1, #1
+	STORE CONTADOR_TECLAS,R1
+	POP{LR}
+	BX LR
+
 
 aberto
 	PUSH{LR}
@@ -219,7 +239,46 @@ fechadoEnd
 
 trancado
 	PUSH{LR}
-	NOP
+	
+	;Verifica se a chave sw1 foi pressionada
+	LOAD ALLOW_TYPE_TRANCADO, R1
+	CMP R1,#1
+	BNE trancadoEnd
+	
+	LOAD CONTADOR_TECLAS,R1
+	CMP R1,#4	
+	BEQ verifyPressJogoVelhaTrancado
+	BL keyboardRead
+	CMP R0,#0
+	BLNE salvaCharTrancado ;Ajeitar essa func
+	B trancadoEnd
+
+verifyPressJogoVelhaTrancado
+	BL keyboardRead
+	CMP R0, #'#'
+	BNE trancadoEnd
+	;EFETUA COMPARACAO DA SENHA HARD CODED COM A SENHA DIGITADA
+	LOAD ENDERECO_SENHA_HARD_CODED,R1
+	LOAD ENDERECO_SENHA_ABERTURA,R2 
+	CMP R1,R2
+	BNE errouSenhaTrancado
+	MOV R1,#ABERTO
+	STORE ESTADO_COFRE, R1
+	MOV R1,#0
+	STORE CONTADOR_TECLAS,R1
+	MOV R1,#0
+	STORE TENTATIVAS,R1
+	;RESETA A FLAG DA CHAVE SW1
+	MOV R1,#0
+	STORE ALLOW_TYPE_TRANCADO,R1
+	B trancadoEnd
+
+errouSenhaTrancado
+	MOV R1,#0
+	STORE CONTADOR_TECLAS,R1
+	B fechadoEnd
+	
+trancadoEnd
 	POP{LR}
 	BX LR	
 ; -------------------------------------------------------------------------------
