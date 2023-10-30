@@ -78,6 +78,7 @@ TRANCADO EQU 0x2
 		IMPORT PortM_Output_Display		; Permite chamar PortM_Output de outro arquivo
 		IMPORT PortL_Input          ; Permite chamar PortL_Input de outro arquivo
 		IMPORT keyboardRead
+		IMPORT LED_Output
 			
 		
 ;;“Cofre aberto, digite nova senha para fechar o cofre”.
@@ -230,8 +231,7 @@ tranca
 	MOV R1,#0
 	STORE TENTATIVAS,R1
 	MOV R1, #TRANCADO
-	STORE ESTADO_COFRE,R1
-	
+	STORE ESTADO_COFRE,R1	
 	
 fechadoEnd
 	POP{LR}
@@ -240,6 +240,7 @@ fechadoEnd
 trancado
 	PUSH{LR}
 	
+	BL LED_Output
 	;Verifica se a chave sw1 foi pressionada
 	LOAD ALLOW_TYPE_TRANCADO, R1
 	CMP R1,#1
@@ -250,7 +251,7 @@ trancado
 	BEQ verifyPressJogoVelhaTrancado
 	BL keyboardRead
 	CMP R0,#0
-	BLNE salvaCharTrancado ;Ajeitar essa func
+	BLNE salvaCharTrancado 
 	B trancadoEnd
 
 verifyPressJogoVelhaTrancado
@@ -294,8 +295,10 @@ mainLoop
 	LOAD ESTADO_COFRE,R1
 	CMP R1, #ABERTO
 	BLEQ aberto
+	LOAD ESTADO_COFRE,R1
 	CMP R1, #FECHADO
 	BLEQ fechado
+	LOAD ESTADO_COFRE,R1
 	CMP R1, #TRANCADO
 	BLEQ trancado
 	

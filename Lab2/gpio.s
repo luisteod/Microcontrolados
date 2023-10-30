@@ -89,6 +89,41 @@ GPIO_PORTN               	EQU    2_001000000000000
 NVIC_EN1_R                  EQU    0xE000E104
 NVIC_PRI12_R                EQU    0xE000E430
 
+;LEDS
+; PORT Q
+GPIO_PORTQ_AHB_LOCK_R    	EQU    0x40066520
+GPIO_PORTQ_AHB_CR_R      	EQU    0x40066524
+GPIO_PORTQ_AHB_AMSEL_R   	EQU    0x40066528
+GPIO_PORTQ_AHB_PCTL_R    	EQU    0x4006652C
+GPIO_PORTQ_AHB_DIR_R     	EQU    0x40066400
+GPIO_PORTQ_AHB_AFSEL_R   	EQU    0x40066420
+GPIO_PORTQ_AHB_DEN_R     	EQU    0x4006651C
+GPIO_PORTQ_AHB_PUR_R     	EQU    0x40066510	
+GPIO_PORTQ_AHB_DATA_R    	EQU    0x400663FC
+GPIO_PORTQ               	EQU    2_100000000000000
+; PORT A
+GPIO_PORTA_AHB_LOCK_R    	EQU    0x40058520
+GPIO_PORTA_AHB_CR_R      	EQU    0x40058524
+GPIO_PORTA_AHB_AMSEL_R   	EQU    0x40058528
+GPIO_PORTA_AHB_PCTL_R    	EQU    0x4005852C
+GPIO_PORTA_AHB_DIR_R     	EQU    0x40058400
+GPIO_PORTA_AHB_AFSEL_R   	EQU    0x40058420
+GPIO_PORTA_AHB_DEN_R     	EQU    0x4005851C
+GPIO_PORTA_AHB_PUR_R     	EQU    0x40058510	
+GPIO_PORTA_AHB_DATA_R    	EQU    0x400583FC
+GPIO_PORTA               	EQU    2_000000000000001
+; PORT P
+GPIO_PORTP_AHB_LOCK_R    	EQU    0x40065520
+GPIO_PORTP_AHB_CR_R      	EQU    0x40065524
+GPIO_PORTP_AHB_AMSEL_R   	EQU    0x40065528
+GPIO_PORTP_AHB_PCTL_R    	EQU    0x4006552C
+GPIO_PORTP_AHB_DIR_R     	EQU    0x40065400
+GPIO_PORTP_AHB_AFSEL_R   	EQU    0x40065420
+GPIO_PORTP_AHB_DEN_R     	EQU    0x4006551C
+GPIO_PORTP_AHB_PUR_R     	EQU    0x40065510	
+GPIO_PORTP_AHB_DATA_R    	EQU    0x400653FC
+GPIO_PORTP               	EQU    2_010000000000000
+
 ; REDEFINICAO DE INCLUDES
 ENDERECO_BASE_SENHA 	EQU 0x20000400
 ENDERECO_SENHA_ABERTURA EQU 0x20000410
@@ -132,6 +167,8 @@ TRANCADO EQU 0x2
 ; �rea de C�digo - Tudo abaixo da diretiva a seguir ser� armazenado na mem�ria de 
 ;                  c�digo
 			AREA    |.text|, CODE, READONLY, ALIGN=2
+			
+			IMPORT SysTick_Wait1ms
 	
 			EXPORT GPIO_Init
 			EXPORT Interrupt_init
@@ -140,6 +177,7 @@ TRANCADO EQU 0x2
 			EXPORT PortM_Output_Display ; Permite chamar PortM_Output_Display de outro arquivo
 			EXPORT PortM_Output_Teclado
 			EXPORT PortL_Input          ; Permite chamar PortL_Input de outro arquivo
+			EXPORT LED_Output
 			
 ;--------------------------------------------------------------------------------
 ; Fun��o GPIO_Init
@@ -154,6 +192,9 @@ GPIO_Init
 			ORR   R1, #GPIO_PORTL					;Seta o bit da porta L
 			ORR   R1, #GPIO_PORTK					;Seta o bit da porta K
 			ORR   R1, #GPIO_PORTJ
+			ORR   R1, #GPIO_PORTQ
+			ORR   R1, #GPIO_PORTA
+			ORR   R1, #GPIO_PORTP
 			STR   R1, [R0]							
 
 			LDR   R0, =SYSCTL_PRGPIO_R				;Carrega o endere�o do PRGPIO para esperar os GPIO ficarem prontos
@@ -171,6 +212,12 @@ EsperaGPIO  LDR   R2, [R0]
 			STR   R1, [R0]
 			LDR   R0, =GPIO_PORTJ_AMSEL_R
 			STR   R1, [R0]
+			LDR   R0, =GPIO_PORTQ_AHB_AMSEL_R		
+            STR   R1, [R0]
+			LDR   R0, =GPIO_PORTA_AHB_AMSEL_R		
+            STR   R1, [R0]
+			LDR   R0, =GPIO_PORTP_AHB_AMSEL_R		
+            STR   R1, [R0]
 			
 ; 3. Limpar PCTL para selecionar o GPIO
 			MOV   R1, #0x00
@@ -182,6 +229,12 @@ EsperaGPIO  LDR   R2, [R0]
 			STR   R1, [R0]
 			LDR   R0, =GPIO_PORTJ_PCTL_R
 			STR   R1, [R0]
+			LDR   R0, =GPIO_PORTQ_AHB_PCTL_R      
+            STR   R1, [R0]
+			LDR   R0, =GPIO_PORTA_AHB_PCTL_R      
+            STR   R1, [R0]
+			LDR   R0, =GPIO_PORTP_AHB_PCTL_R      
+            STR   R1, [R0]
 
 ; 4. DIR para 0 se for entrada, 1 se for saida
 			LDR   R0, =GPIO_PORTM_DIR_R
@@ -199,6 +252,18 @@ EsperaGPIO  LDR   R2, [R0]
 			LDR   R0, =GPIO_PORTJ_DIR_R					;J0 LEITURA
 			MOV   R1, #0x00
 			STR   R1, [R0]
+			
+			LDR   R0, =GPIO_PORTQ_AHB_DIR_R		
+			MOV   R1, #2_00001111					
+            STR   R1, [R0]
+			
+			LDR   R0, =GPIO_PORTA_AHB_DIR_R		
+			MOV   R1, #2_11110000					
+            STR   R1, [R0]
+			
+			LDR   R0, =GPIO_PORTP_AHB_DIR_R		
+			MOV   R1, #2_00100000					
+            STR   R1, [R0]
 
 
 ; 5. Limpa os bits AFSEL
@@ -211,6 +276,12 @@ EsperaGPIO  LDR   R2, [R0]
 			STR   R1, [R0]
 			LDR   R0, =GPIO_PORTJ_AFSEL_R
 			STR   R1, [R0]
+			LDR   R0, =GPIO_PORTQ_AHB_AFSEL_R     
+            STR   R1, [R0]			
+			LDR   R0, =GPIO_PORTA_AHB_AFSEL_R     
+            STR   R1, [R0]			
+			LDR   R0, =GPIO_PORTP_AHB_AFSEL_R     
+            STR   R1, [R0]
 
 			
 ; 6. Seta os bits de DEN para habilitar I/O digital
@@ -229,6 +300,18 @@ EsperaGPIO  LDR   R2, [R0]
 			LDR   R0, =GPIO_PORTJ_DEN_R
 			MOV   R1, #2_00000001							;ATIVA J0
 			STR   R1, [R0]
+			
+			LDR   R0, =GPIO_PORTQ_AHB_DEN_R			
+			MOV   R1, #2_00001111                           
+            STR   R1, [R0] 
+			
+			LDR   R0, =GPIO_PORTA_AHB_DEN_R			
+			MOV   R1, #2_11110000                           
+            STR   R1, [R0] 
+			
+			LDR   R0, =GPIO_PORTP_AHB_DEN_R			
+			MOV   R1, #2_00100000                           
+            STR   R1, [R0] 
 			
 			
 			
@@ -298,7 +381,30 @@ InterruptEnd
 			STR R1, [R3]
 			
 			BX LR
-			
+
+LED_Output
+	LDR R8, = GPIO_PORTA_AHB_DATA_R
+	MOV R2, #2_11110000
+	LDR R9, = GPIO_PORTQ_AHB_DATA_R
+	MOV R3, #2_00001111
+	STR R2, [R8]
+	STR R3, [R9]
+	LDR R8, = GPIO_PORTP_AHB_DATA_R
+	LDR R2, [R8]
+	BIC R2, #2_00100000
+	ORR R2, #2_00100000
+	STR R2, [R8]
+	BIC R2, #2_00100000
+	MOV R0, #50
+	PUSH {LR}
+	BL SysTick_Wait1ms
+	POP {LR}
+	STR R2, [R8]
+	MOV R0, #50
+	PUSH {LR}
+	BL SysTick_Wait1ms
+	POP {LR}
+	BX LR
 	
 ; -------------------------------------------------------------------------------
 ; -------------------------------------------------------------------------------
