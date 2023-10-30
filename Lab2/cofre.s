@@ -18,10 +18,10 @@ TENTATIVAS 		EQU 0x20000430
 CONTADOR_TECLAS	EQU	0x20000440
 ALLOW_TYPE_TRANCADO	EQU 0x20000460
 
-ABERTO   EQU 0x0
-FECHADO  EQU 0x1
-TRANCADO EQU 0x2
-		
+ABERTO   		EQU 0x0
+FECHADO 	    EQU 0x1
+TRANCADO 		EQU 0x2
+
 		
 	MACRO	
 	STORE $ADDR, $VAL 	;STORE {ADDR=DEFINE} , {VAL=R1} 
@@ -81,39 +81,34 @@ TRANCADO EQU 0x2
 		IMPORT LED_Output
 			
 		
-;;“Cofre aberto, digite nova senha para fechar o cofre”.
-;cofre_aberto = 0x43, 0x6F, 0x66, 0x72, 0x65, 0x20, 0x61, 0x62, 0x65, 0x72, 0x74, 0x6F, 0x00; 0x2C, 0x20, 0x64, 0x69, 0x67, 0x69, 0x74, 0x65, 0x20, 0x6E, 0x6F, 0x76, 0x61, 0x20, 0x73, 0x65, 0x6E, 0x68, 0x61, 0x20, 0x00
+;“Cofre aberto, digite nova senha para fechar o cofre”.
+cofre_aberto = 0x43, 0x6F, 0x66, 0x72, 0x65, 0x20, 0x61, 0x62, 0x65, 0x72, 0x74, 0x6F, 0x00; 0x2C, 0x20, 0x64, 0x69, 0x67, 0x69, 0x74, 0x65, 0x20, 0x6E, 0x6F, 0x76, 0x61, 0x20, 0x73, 0x65, 0x6E, 0x68, 0x61, 0x20, 0x00
 
-;;"Cofre fechando..."
-;cofre_fechando = 0x43, 0x6F, 0x66, 0x72, 0x65, 0x20, 0x66, 0x65, 0x63, 0x68, 0x61, 0x6E, 0x64, 0x6F, 0x00
+;"Cofre fechando..."
+cofre_fechando = 0x43, 0x6F, 0x66, 0x72, 0x65, 0x20, 0x66, 0x65, 0x63, 0x68, 0x61, 0x6E, 0x64, 0x6F, 0x00
 
-;;"Cofre fechado!"
-;cofre_fechado = 0x43, 0x6F, 0x66, 0x72, 0x65, 0x20, 0x66, 0x65, 0x63, 0x68, 0x61, 0x64, 0x6F, 0x21, 0x00
+;"Cofre fechado!"
+cofre_fechado = 0x43, 0x6F, 0x66, 0x72, 0x65, 0x20, 0x66, 0x65, 0x63, 0x68, 0x61, 0x64, 0x6F, 0x21, 0x00
 
-;;"Cofre travado!"
-;cofre_travado = 'c', 'o', 'f','r','e',' ','t','r','a','v','a','d','o','!', 0x00
+;"Cofre travado!"
+cofre_travado = 'C', 'o', 'f','r','e',' ','t','r','a','v','a','d','o','!', 0x00
 
-;;"Senha:"
-;senha = 0x53, 0x65, 0x6E, 0x68, 0x61, 0x3A, 0x00
+;"Cofre abrindo"
+cofre_abrindo = 'C', 'o', 'f','r','e',' ', 'a', 'b', 'r', 'i', 'n','d','o',0x00
 
-;;"Mestra:"
-;mestra = 0x4d, 0x65, 0x73, 0x74, 0x72, 0x61, 0x3a, 0x00
-;;estados do cofre -> R9
-;;0x0 = aberto
-;;0x1 = fechando
-;;0x2 = fechado
+;"Senha:"
+senha = 0x53, 0x65, 0x6E, 0x68, 0x61, 0x3A, 0x00
 
-;;estados do LCD -> R8
-;;0x0 = parado
-;;0x1 = correndo
+;"Mestra:"
+mestra = 0x4d, 0x65, 0x73, 0x74, 0x72, 0x61, 0x3a, 0x00
 
-;;digito_atual_senha -> R6
-;;0x0, 0x1, 0x2, 0x3
+;"Aguarde..."
+aguarde = 'A','g','u','a','r','d','e','.','.','.',0x00
 
 
 globalVarsInit
 	PUSH{LR}
-	
+
 	MOV R1, #ABERTO
 	STORE ESTADO_COFRE, R1
 	MOV R1, #0
@@ -136,6 +131,8 @@ globalVarsInit
 salvaCharAberto
 	PUSH{LR}
 	MOV R10, R0
+	mov r0, #'*'
+	bl LCD_SendData
 	LOAD CONTADOR_TECLAS, R1
 	STORE_OFFSET ENDERECO_BASE_SENHA, R10, R1 
 	;Incrementa contador de teclas
@@ -147,6 +144,8 @@ salvaCharAberto
 salvaCharFechado
 	PUSH{LR}
 	MOV R10, R0
+	mov r0, #'*'
+	bl LCD_SendData
 	LOAD CONTADOR_TECLAS, R1
 	STORE_OFFSET ENDERECO_SENHA_ABERTURA, R10, R1 
 	;Incrementa contador de teclas
@@ -158,6 +157,8 @@ salvaCharFechado
 salvaCharTrancado
 	PUSH{LR}
 	MOV R10, R0
+	mov r0, #'*'
+	bl LCD_SendData
 	LOAD CONTADOR_TECLAS, R1
 	STORE_OFFSET ENDERECO_SENHA_ABERTURA, R10, R1 
 	;Incrementa contador de teclas
@@ -165,8 +166,7 @@ salvaCharTrancado
 	STORE CONTADOR_TECLAS,R1
 	POP{LR}
 	BX LR
-
-
+	
 aberto
 	PUSH{LR}
 
@@ -223,14 +223,13 @@ verifyPressJogoVelhaFechado
 
 errouSenha
 	MOV R1,#0
-	STORE CONTADOR_TECLAS,R1
-	; incrementa tentativas
-	; estourou? vai pro estado travado
+	STORE CONTADOR_TECLAS,R1; incrementa tentativas; estourou? vai pro estado travado
 	LOAD TENTATIVAS, R1
 	CMP R1,#2
 	BEQ tranca
 	ADD R1, #1
 	STORE TENTATIVAS, R1
+	BL displayFechado
 	B fechadoEnd
 
 tranca
@@ -246,13 +245,29 @@ fechadoEnd
 
 trancado
 	PUSH{LR}
-	
 	BL LED_Output
 	;Verifica se a chave sw1 foi pressionada
 	LOAD ALLOW_TYPE_TRANCADO, R1
 	CMP R1,#1
 	BNE trancadoEnd
+;	CMP R2, #2
+;	BEQ trancado_mestre;se o botao foi pressionado entra no estado mestre;religa o cursor e atualiza a linha 2 do LCD
+;	MOV R1, #0x2
+;	STORE ALLOW_TYPE_TRANCADO, R1
+
+	mov r0, #0x0E
+    bl LCD_SendCommand
+	bl Delay_40us
 	
+	mov r0, #0xc0
+    bl  LCD_SendCommand
+	bl Delay_40us
+	LDR R5, =mestra
+	BL STRING_TO_LCD
+
+	
+trancado_mestre
+	BL LED_Output
 	LOAD CONTADOR_TECLAS,R1
 	CMP R1,#4	
 	BEQ verifyPressJogoVelhaTrancado
@@ -271,7 +286,7 @@ verifyPressJogoVelhaTrancado
 	CMP R1,R2
 	BNE errouSenhaTrancado
 	MOV R1,#ABERTO
-	STORE ESTADO_COFRE, R1
+	STORE ESTADO_COFRE,R1
 	MOV R1,#0
 	STORE CONTADOR_TECLAS,R1
 	MOV R1,#0
@@ -286,38 +301,119 @@ verifyPressJogoVelhaTrancado
 errouSenhaTrancado
 	MOV R1,#0
 	STORE CONTADOR_TECLAS,R1
-	B fechadoEnd
+;	MOV R1, #TRANCADO
+;	STORE ESTADO_COFRE,R1
+	BL displayTrancado
+	B trancadoEnd
 
-	
 trancadoEnd
 	POP{LR}
-	BX LR	
+	BX LR
+
+
 
 ;----------------------------------
 ;Display Messages
 displayAberto
 	PUSH{LR}
-	NOP
+	bl LCD_Init
+	
+	;linha 1
+	mov r0, #0x80
+    bl LCD_SendCommand
+	bl Delay_40us
+	LDR R5, =cofre_aberto
+	BL STRING_TO_LCD
+	
+	;linha 2
+	mov r0, #0xc0
+    bl LCD_SendCommand
+	bl Delay_40us
+	LDR R5, =senha
+	BL STRING_TO_LCD
 	POP{LR}
 	BX LR
+	
 displayAbrindo
 	PUSH{LR}
-	NOP
+	bl LCD_Init
+	
+	;linha 1
+	mov r0, #0x80
+    bl LCD_SendCommand
+	bl Delay_40us
+	LDR R5, =cofre_abrindo
+	BL STRING_TO_LCD
+	
+	;linha 2
+	mov r0, #0xc0
+    bl LCD_SendCommand
+	bl Delay_40us
+	LDR R5, =aguarde
+	BL STRING_TO_LCD
+	
+	;delay de 5seg
+	mov r0, #5000
+	bl SysTick_Wait1ms
+	
 	POP{LR}
 	BX LR
 displayFechado
 	PUSH{LR}
-	NOP
+	bl LCD_Init
+	;linha 1
+	mov r0, #0x80
+    bl LCD_SendCommand
+	bl Delay_40us
+	LDR R5, =cofre_fechado
+	BL STRING_TO_LCD
+	
+	;linha 2
+	mov r0, #0xc0
+    bl LCD_SendCommand
+	bl Delay_40us
+	LDR R5, =senha
+	BL STRING_TO_LCD
 	POP{LR}
 	BX LR
 displayFechando
 	PUSH{LR}
-	NOP
+	bl LCD_Init
+	;linha 1
+	mov r0, #0x80
+    bl LCD_SendCommand
+	bl Delay_40us
+	LDR R5, =cofre_fechando
+	BL STRING_TO_LCD
+	
+	;linha 2
+	mov r0, #0xc0
+    bl LCD_SendCommand
+	bl Delay_40us
+	LDR R5, =aguarde
+	BL STRING_TO_LCD
+	
+	;delay de 5seg
+	mov r0, #5000
+	bl SysTick_Wait1ms
+	
 	POP{LR}
 	BX LR
 displayTrancado
 	PUSH{LR}
-	NOP
+	bl LCD_Init
+	;linha 1
+	mov r0, #0x80
+    bl LCD_SendCommand
+	bl Delay_40us
+	LDR R5, =cofre_travado
+	BL STRING_TO_LCD
+	
+	;DESABILITA O CURSOR
+	mov r0, #0x0C
+    bl LCD_SendCommand
+	bl Delay_40us
+	
 	POP{LR}
 	BX LR
 ; -------------------------------------------------------------------------------
@@ -333,12 +429,18 @@ mainLoop
 	LOAD ESTADO_COFRE,R1
 	CMP R1, #ABERTO
 	BLEQ aberto
+	
 	LOAD ESTADO_COFRE,R1
 	CMP R1, #FECHADO
 	BLEQ fechado
+	
 	LOAD ESTADO_COFRE,R1
 	CMP R1, #TRANCADO
 	BLEQ trancado
+	
+;	LOAD ESTADO_COFRE,R1
+;	CMP R1, #TRANCADO_MESTRA
+;	BLEQ trancado_mestre
 	
 	B mainLoop
 	
@@ -351,28 +453,25 @@ mainLoop
 ;	mov r4, #0x0
 ;	B MainLoop
 	
-;LCD_Init
-;	push{lr}
-;    movs r0, #0x38      
-;    bl  LCD_SendCommand
-;	bl Delay_40us
+LCD_Init
+	push{lr}
+    mov r0, #0x38      
+    bl  LCD_SendCommand
+	bl Delay_40us
 
-;    movs r0, #0x0D      ; Display ON/OFF Control (Display on, Cursor off, Blinking off)
-;    bl  LCD_SendCommand
-;	bl Delay_40us
-;	
-;	movs r0, #0x01      ; Clear Display
-;    bl  LCD_SendCommand
-;	bl Delay_1640us
+    mov r0, #0x0D      ; Display ON/OFF Control (Display on, Cursor off, Blinking off)
+    bl  LCD_SendCommand
+	bl Delay_40us
+	
+	mov r0, #0x01      ; Clear Display
+    bl  LCD_SendCommand
+	bl Delay_1640us
 
-;    movs r0, #0x06    ; Entry Mode Set (Increment cursor, no display shift)
-;    bl  LCD_SendCommand
-;	bl Delay_40us
-;	
-;	BL LCD_Update_linha1
-;	BL LCD_Update_linha2
-;	pop{lr}
-;	bx lr
+    mov r0, #0x06    ; Entry Mode Set (Increment cursor, no display shift)
+    bl  LCD_SendCommand
+	bl Delay_40us
+	pop{lr}
+	bx lr
 
 ;MainLoop
 ;	cmp r9, #0x0
@@ -705,7 +804,6 @@ delay_loop
     POP{LR}
     BX LR
 
-Delay_1s
 
 ; -------------------------------------------------------------------------------------------------------------------------
 ; Fim do Arquivo
