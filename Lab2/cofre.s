@@ -123,6 +123,8 @@ globalVarsInit
 	;SALVA SENHA HARD CODED
 	MOV R1,#0x31313131
 	STORE ENDERECO_SENHA_HARD_CODED,R1
+	
+	BL displayAberto
 
 	POP{LR}
 	BX LR
@@ -184,6 +186,8 @@ verifyPressJogoVelhaAberto
 	STORE ESTADO_COFRE, R1
 	MOV R1,#0
 	STORE CONTADOR_TECLAS, R1
+	BL displayFechando
+	BL displayFechado
 
 abertoEnd
 	POP{LR}
@@ -213,6 +217,8 @@ verifyPressJogoVelhaFechado
 	STORE CONTADOR_TECLAS,R1
 	MOV R1,#0
 	STORE TENTATIVAS,R1
+	BL displayAbrindo
+	BL displayAberto
 	B fechadoEnd
 
 errouSenha
@@ -231,7 +237,8 @@ tranca
 	MOV R1,#0
 	STORE TENTATIVAS,R1
 	MOV R1, #TRANCADO
-	STORE ESTADO_COFRE,R1	
+	STORE ESTADO_COFRE,R1
+	BL displayTrancado
 	
 fechadoEnd
 	POP{LR}
@@ -272,16 +279,47 @@ verifyPressJogoVelhaTrancado
 	;RESETA A FLAG DA CHAVE SW1
 	MOV R1,#0
 	STORE ALLOW_TYPE_TRANCADO,R1
+	BL displayAbrindo
+	BL displayAberto
 	B trancadoEnd
 
 errouSenhaTrancado
 	MOV R1,#0
 	STORE CONTADOR_TECLAS,R1
 	B fechadoEnd
+
 	
 trancadoEnd
 	POP{LR}
 	BX LR	
+
+;----------------------------------
+;Display Messages
+displayAberto
+	PUSH{LR}
+	NOP
+	POP{LR}
+	BX LR
+displayAbrindo
+	PUSH{LR}
+	NOP
+	POP{LR}
+	BX LR
+displayFechado
+	PUSH{LR}
+	NOP
+	POP{LR}
+	BX LR
+displayFechando
+	PUSH{LR}
+	NOP
+	POP{LR}
+	BX LR
+displayTrancado
+	PUSH{LR}
+	NOP
+	POP{LR}
+	BX LR
 ; -------------------------------------------------------------------------------
 ; Função main()
 Start  		
