@@ -1,11 +1,11 @@
 #include <stdint.h>
 #include <math.h>
-
 #include "uart.h"
 #include "tm4c1294ncpdt.h"
 
 #define UARTSysClk 80000000
 #define BAUD_RATE 57600
+void SysTick_Wait1ms(uint32_t delay);
 
 void UARTInit () {
 
@@ -61,14 +61,13 @@ void UARTTransmit (unsigned char msgChar) {
 	if ((!queueFull) && (msgChar != 0)) {
 		UART0_DR_R = msgChar;
 	}
-
+	SysTick_Wait1ms(10);
 }
 
 void UARTSendString (unsigned char* string) {
 	unsigned char c = string[0];
 	int i = 1;
-	
-    while (c != '\0') {
+  while (c != '\0') {
         UARTTransmit(c);
 		c = string[i++];
     }
