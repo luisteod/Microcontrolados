@@ -17,9 +17,13 @@
 #define GPIO_PORTQ (0x1 << 14)
 #define GPIO_PORTP (0X1 << 13)
 
+#define TIMER_2    (0x1 << 2)
+
 void GPIOPortJ_Handler(void);
+void Timer2A_Handler(void);
 extern int is_rotate_canc;
 extern int angulo_it;
+extern int is_motor_active;
 
 // -------------------------------------------------------------------------------
 // Fun��o GPIO_Init
@@ -92,6 +96,47 @@ void GPIO_Init(void)
 	GPIO_PORTJ_AHB_IM_R = 0x1;
 	NVIC_EN1_R = 0x1 << 19;
 	NVIC_PRI12_R = 5 << 29;
+}
+
+void led_timer_init(void)
+{
+	SYSCTL_RCGCTIMER_R = TIMER_2; //habilita clock do timer 2
+
+	while(SYSCTL_PRTIMER_R & TIMER_2 != TIMER_2);
+
+	TIMER2_CTL_R = TIMER2_CTL_R & 0xFFE; //desabilita timer 2
+
+	TIMER2_CFG_R = 0x00;
+
+	TIMER2_TAMR_R = 0x02; //periodic mode
+
+	TIMER2_TAILR_R = 0xF423FF; //15.999.999
+
+	TIMER2_TAPR_R = 0x000; //sem prescaler
+
+	TIMER2_ICR_R = 0x1; //limpa flag de interrupcao
+
+	TIMER2_IMR_R = 0x1; //habilita interrupcao
+
+	NVIC_PRI5_R = 4 << 29; //prioridade 4
+
+	NVIC_EN0_R = 1 << 23; //habilita interrupcao no NVIC
+
+	TIMER2_CTL_R = TIMER2_CTL_R | 0x1; //habilita timer 2
+}
+
+void Timer2A_Handler(void)
+{
+	TIMER2_ICR_R = 0x1; //limpa flag de interrupcao
+
+	if(is_motor_active) //faz alternancia dos leds
+	{
+		if(GPIO_PORTN_DATA_R == 0x0)
+			GPIO_PORTN_DATA_R = 0x1;
+		else
+			GPIO_PORTN_DATA_R = 0x0;
+	}
+
 }
 
 // -------------------------------------------------------------------------------

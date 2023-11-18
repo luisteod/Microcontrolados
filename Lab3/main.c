@@ -22,6 +22,7 @@ unsigned char espaco = ' ';
 //global
 int is_rotate_canc = 0;
 int angulo_it = 0;
+int is_motor_active = 0;
 
 // Convert uint32_t to unsigned char array
 void att_TERMINAL(uint32_t val, unsigned char vel, unsigned char dir)
