@@ -78,7 +78,7 @@ uint32_t customAtoi(unsigned char *str)
 unsigned char solicita_velocidade()
 {
 
-    unsigned char solicita_velocidade[] = "Velocidade(0/1): ";
+    unsigned char solicita_velocidade[] = "Velocidade(0 - passo completo/1 - meio passo): ";
     UARTSendString(solicita_velocidade);
     unsigned char msg = 0;
 
@@ -94,7 +94,7 @@ unsigned char solicita_velocidade()
 unsigned char solicita_direcao()
 {
 
-    unsigned char solicita_direcao[] = "Direcao(0/1): ";
+    unsigned char solicita_direcao[] = "Direcao(0 - horario/1 - antihorario): ";
     UARTSendString(solicita_direcao);
     unsigned char msg = 0;
 
@@ -165,11 +165,8 @@ void RotateFromUART()
     uint32_t angulo = customAtoi(angulo_char);
 
     unsigned char solicita_aguardo[] = "Aguarde...\n";
-    UARTSendString(solicita_aguardo);
-    UARTSendString(pula_linha);
-
-    att_TERMINAL(velocidade, direcao, 0);
-
+	
+		is_motor_active = 1;
     for(angulo_it = 0 ; angulo_it < angulo && is_rotate_canc == 0; angulo_it += 15)
     {
 
@@ -180,10 +177,13 @@ void RotateFromUART()
         att_TERMINAL(angulo_it, velocidade, direcao);
     }
     led_dir_output(direcao);
+		UARTSendString(solicita_aguardo);
+     UARTSendString(pula_linha);
 		 att_TERMINAL(angulo_it, velocidade, direcao);
 
     
     unsigned char fim[] = "FIM...Pressione * para continuar\n";
+		is_motor_active = 0;
     UARTSendString(fim);
     UARTSendString(pula_linha);
     waitForChar('*');
@@ -209,6 +209,8 @@ int main()
     SysTick_Init();
     GPIO_Init();
     UARTInit();
+		led_timer_init();
+	
     // Aguarda input do usuário de quantos graus o motor deve girar (0~360), o sentido de rotação e a velocidade
     while (1)
     {

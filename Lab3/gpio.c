@@ -102,7 +102,7 @@ void led_timer_init(void)
 {
 	SYSCTL_RCGCTIMER_R = TIMER_2; //habilita clock do timer 2
 
-	while(SYSCTL_PRTIMER_R & TIMER_2 != TIMER_2);
+	while((SYSCTL_PRTIMER_R & TIMER_2) != TIMER_2);
 
 	TIMER2_CTL_R = TIMER2_CTL_R & 0xFFE; //desabilita timer 2
 
