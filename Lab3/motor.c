@@ -52,47 +52,47 @@ void controlStepperMotor(uint32_t direction, uint32_t stepMode)
             if (direction == '0')
             {
 
-                PortH_Output(0x1); // 1110
+                PortH_Output(0xE); // 1110
                 SysTick_Wait1ms(10);
-                PortH_Output(0x3); // 1100
-                SysTick_Wait1ms(10);
-
-                PortH_Output(0x2); // 1101
-                SysTick_Wait1ms(10);
-                PortH_Output(0x6); // 1001
+                PortH_Output(0xC); // 1100
                 SysTick_Wait1ms(10);
 
-                PortH_Output(0x4); // 1011
+                PortH_Output(0xD); // 1101
                 SysTick_Wait1ms(10);
-                PortH_Output(0xC); // 0011
+                PortH_Output(0x9); // 1001
                 SysTick_Wait1ms(10);
 
-                PortH_Output(0x8); // 0111
+                PortH_Output(0xB); // 1011
                 SysTick_Wait1ms(10);
-                PortH_Output(0x9); // 0110
+                PortH_Output(0x3); // 0011
+                SysTick_Wait1ms(10);
+
+                PortH_Output(0x7); // 0111
+                SysTick_Wait1ms(10);
+                PortH_Output(0x6); // 0110
                 SysTick_Wait1ms(10);
             }
             else if (direction == '1')
             {
 
-                PortH_Output(0x9); // 0110
+                PortH_Output(0x6); // 0110
                 SysTick_Wait1ms(10);
-                PortH_Output(0x8); // 0111
-                SysTick_Wait1ms(10);
-
-                PortH_Output(0xC); // 0011
-                SysTick_Wait1ms(10);
-                PortH_Output(0x4); // 1011
+                PortH_Output(0x7); // 0111
                 SysTick_Wait1ms(10);
 
-                PortH_Output(0x6); // 1001
+                PortH_Output(0x3); // 0011
                 SysTick_Wait1ms(10);
-                PortH_Output(0x2); // 1101
+                PortH_Output(0xB); // 1011
                 SysTick_Wait1ms(10);
 
-                PortH_Output(0x3); // 1100
+                PortH_Output(0x9); // 1001
                 SysTick_Wait1ms(10);
-                PortH_Output(0x1); // 1110
+                PortH_Output(0xD); // 1101
+                SysTick_Wait1ms(10);
+
+                PortH_Output(0xC); // 1100
+                SysTick_Wait1ms(10);
+                PortH_Output(0xE); // 1110
                 SysTick_Wait1ms(10);
             }
         }

@@ -15,6 +15,7 @@ void Motor_Init(void);
 void ativaLEDS(uint32_t angle, uint32_t direction);
 void waitForChar(char ch);
 void reset(void);
+void reset_LEDS();
 unsigned char pula_linha[] = "\n\r";
 unsigned char espaco = ' ';
 
@@ -176,7 +177,6 @@ void RotateFromUART()
         controlStepperMotor(direcao, velocidade); // Call your stepper motor control function
         led_dir_output(direcao);
         att_TERMINAL(angulo_it, velocidade, direcao);
-        ativaLEDS(angulo_it, direcao);
     }
     led_dir_output(direcao);
 		 att_TERMINAL(angulo_it, velocidade, direcao);
@@ -192,6 +192,7 @@ void RotateFromUART()
 void reset(void)
 {
     Motor_Init();
+    reset_LEDS();
 }
 
 // Function to wait for a specific character from UART
@@ -199,23 +200,6 @@ void waitForChar(char ch)
 {
     while (UARTReceive() != ch)
         ;
-}
-
-// Activate the LEDS based on the direction and the angle
-void ativaLEDS(uint32_t graus_atual, uint32_t direction)
-{
-    if (!graus_atual % 45)
-        switch (direction)
-        {
-        // horario
-        case 0:
-            // liga os leds da esquerda pra direita
-            break;
-        // anti-horario
-        case 1:
-            // liga os leds da direita pra esquerda
-            break;
-        }
 }
 
 int main()

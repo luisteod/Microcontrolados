@@ -116,6 +116,12 @@ void GPIOPortJ_Handler(void)
 	GPIO_PORTJ_AHB_ICR_R = 1;
 }
 
+void reset_LEDS()
+{
+	GPIO_PORTA_AHB_DATA_R = 0xF & GPIO_PORTA_AHB_DATA_R;
+	GPIO_PORTQ_DATA_R = GPIO_PORTQ_DATA_R & 0X00;
+}
+
 void led_dir_output(char direcao)
 {
 	if (angulo_it % 45 == 0)
