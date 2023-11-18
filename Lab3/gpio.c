@@ -136,6 +136,10 @@ void Timer2A_Handler(void)
 		else
 			GPIO_PORTN_DATA_R = 0x0;
 	}
+	else
+	{
+		GPIO_PORTN_DATA_R = 0x0;
+	}
 
 }
 
