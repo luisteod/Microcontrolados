@@ -28,7 +28,7 @@ void adc_init(void)
 	ADC0_ACTSS_R = 0x1 << 3;
 }
 
-int adc_read(void)
+uint32_t adc_read(void)
 {
 	//inicializa a conversao no SS3
 	ADC0_PSSI_R = 0x8;
