@@ -140,7 +140,7 @@ void atualiza_motor_potenciometro(void)
 		}
 		else if (sentido == ESQUERDA)
 		{
-			porcentagem_pot = porcent_conv_pot_esq(porcentagem_pot) < porcent_conv_pot_esq(porcentagem_inicial)
+			porcentagem_pot = porcent_conv_pot_esq(porcentagem_pot) > porcent_conv_pot_esq(porcentagem_inicial)
 								  ? porcentagem_inicial
 								  : (porcentagem_pot - 0.1);
 
