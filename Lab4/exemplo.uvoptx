@@ -179,6 +179,11 @@
           <WinNumber>1</WinNumber>
           <ItemText>porcentagem_final</ItemText>
         </Ww>
+        <Ww>
+          <count>6</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>porcentagem_inicial</ItemText>
+        </Ww>
       </WatchWindow1>
       <MemoryWindow1>
         <Mm>
@@ -404,6 +409,18 @@
       <bDave2>0</bDave2>
       <PathWithFileName>.\motor_dc.h</PathWithFileName>
       <FilenameWithoutPath>motor_dc.h</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
+    <File>
+      <GroupNumber>1</GroupNumber>
+      <FileNumber>15</FileNumber>
+      <FileType>5</FileType>
+      <tvExp>0</tvExp>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
+      <PathWithFileName>.\system_global_definitions.h</PathWithFileName>
+      <FilenameWithoutPath>system_global_definitions.h</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>

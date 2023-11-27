@@ -40,9 +40,9 @@ reset_sentido_motor:
 
 	while (1)
 	{
-		//SysTick_Wait1ms(5000);
-		//para_motor();
-		// reset_sentido_motor;
+		SysTick_Wait1ms(5000);
+		para_motor();
+    goto reset_sentido_motor;
 
 		// if(/*alterar sentido de rot ?*/)
 		// {

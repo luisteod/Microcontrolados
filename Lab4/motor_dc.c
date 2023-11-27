@@ -54,9 +54,8 @@ void ativa_motor(void)
 
 	porcentagem_inicial = adc_read() / (float)VALOR_MAX_ADC;
 
-	while (porcentagem != porcentagem_inicial)
+	while (estado_motor != ATIVO)
 		;
-	estado_motor = ATIVO;
 }
 void atualiza_motor(void)
 {
@@ -72,10 +71,12 @@ void atualiza_motor(void)
 
 void para_motor(void)
 {
-	estado_motor = DESATIVANDO;
-	while (porcentagem != 0)
-		;
-	estado_motor = INATIVO;
+	if (estado_motor == ATIVO)
+	{
+		estado_motor = DESATIVANDO;
+		while (estado_motor != INATIVO)
+			;
+	}
 }
 
 // funcao que configurara o pwm
@@ -89,11 +90,20 @@ void atualiza_motor_teclado(void)
 	else if (estado_motor == DESATIVANDO)
 	{
 		porcentagem = porcentagem < 0.1 ? 0 : (porcentagem - 0.1);
+		if (porcentagem == 0)
+		{
+			estado_motor = INATIVO;
+		}
 	}
 	else if (estado_motor == ATIVANDO)
 	{
 		porcentagem = porcentagem > porcentagem_inicial ? porcentagem_inicial : (porcentagem + 0.1);
 	}
+
+	if(porcentagem == porcentagem_inicial)
+		estado_motor = ATIVO;
+
+
 }
 
 // funcao que ira configurar o pwm
@@ -118,7 +128,6 @@ void atualiza_motor_potenciometro(void)
 	}
 	else if (estado_motor == ATIVANDO)
 	{
-
 		sentido = porcentagem_inicial > 0.5 ? DIREITA : ESQUERDA;
 
 		if (sentido == DIREITA)
@@ -134,8 +143,23 @@ void atualiza_motor_potenciometro(void)
 			porcentagem_pot = porcent_conv_pot_esq(porcentagem_pot) < porcent_conv_pot_esq(porcentagem_inicial)
 								  ? porcentagem_inicial
 								  : (porcentagem_pot - 0.1);
-								  
+
 			porcentagem = porcent_conv_pot_esq(porcentagem_pot);
+		}
+
+		if (porcentagem_pot == porcentagem_inicial)
+		{
+			estado_motor = ATIVO;
+		}
+	}
+	else if (estado_motor == DESATIVANDO)
+	{
+		porcentagem = porcentagem < 0.1 ? 0 : (porcentagem - 0.1);
+
+		if (porcentagem == 0)
+		{
+			estado_motor = INATIVO;
+			porcentagem_pot = 0.5;
 		}
 	}
 }
