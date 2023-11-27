@@ -16,7 +16,7 @@ void SysTick_Wait1ms(uint32_t delay);
 void SysTick_Wait1us(uint32_t delay);
 
 int modo_entrada = TECLADO;
-int sentido = DIREITA;
+int sentido = ESQUERDA;
 int estado_motor = INATIVO;
 
 int main(void)

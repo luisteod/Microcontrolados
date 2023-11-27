@@ -38,6 +38,8 @@ void inicia_motor(void)
 	Timer2A_Init();
 	// Configura o timer que ira gerar o pwm
 	Timer1A_Init();
+
+	GPIO_PORTF_AHB_DATA_R = 0x1 << 2; // Habilita o pino F2 (enable)
 }
 void ativa_motor(void)
 {
