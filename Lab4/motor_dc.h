@@ -6,7 +6,7 @@
 #define TECLADO 0
 #define POTENCIOMETRO 1
 
-void inicia_motor(void);
+void inicia_motor(void);;
 void ativa_motor(void);
 void para_motor(void);
 

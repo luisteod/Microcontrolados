@@ -8,7 +8,7 @@
 #define LOW 0
 
 // Em que x e o valor em ms
-#define TIMER_VALUE(x) ( x > 0 ? (x * 80000 - 1) : 0)
+#define TIMER_VALUE(x) (x > 0 ? (x * 80000 - 1) : 0)
 
 #define TIMER_2 (0x1 << 2)
 #define TIMER_2_MS 200 //<----- Edite para configurar o timer 2A em ms
@@ -17,14 +17,16 @@
 
 int volatile estado_pwm = 0;
 float volatile porcentagem = 0;
+float porcentagem_final = 0;
 
 extern int estado_motor;
 extern int modo_entrada;
 extern int sentido;
 
+void atualiza_motor(void);
 void pwm(void);
-void ativa_motor_teclado(void);
-void ativa_motor_potenciometro(void);
+void atualiza_motor_teclado(void);
+void atualiza_motor_potenciometro(void);
 void Timer2A_Handler(void);
 void Timer2A_Init(void);
 void Timer1A_Handler(void);
@@ -36,43 +38,63 @@ void inicia_motor(void)
 	/*Configura o timer que ira altera a velocidade de giro
 	conforme o potenciometro*/
 	Timer2A_Init();
+
 	// Configura o timer que ira gerar o pwm
 	Timer1A_Init();
 
 	GPIO_PORTF_AHB_DATA_R = 0x1 << 2; // Habilita o pino F2 (enable)
 }
+
 void ativa_motor(void)
 {
+	estado_motor = ATIVANDO;
+	porcentagem_final = adc_read() / (float)VALOR_MAX_ADC;
+	while (porcentagem != porcentagem_final)
+		;
 	estado_motor = ATIVO;
-
+}
+void atualiza_motor(void)
+{
 	if (modo_entrada == TECLADO)
 	{
-		ativa_motor_teclado();
+		atualiza_motor_teclado();
 	}
 	else if (modo_entrada == POTENCIOMETRO)
 	{
-		ativa_motor_potenciometro();
+		atualiza_motor_potenciometro();
 	}
 }
 
 void para_motor(void)
 {
+	estado_motor = DESATIVANDO;
+	while (porcentagem != 0)
+		;
 	estado_motor = INATIVO;
-
-	// Desliga o motor
-	GPIO_PORTE_AHB_DATA_R = 0x0;
 }
 
 // funcao que configurara o pwm
-void ativa_motor_teclado(void)
+void atualiza_motor_teclado(void)
 {
 	// Salva a porcentagem numa variavel global
-	porcentagem = adc_read() / (float)VALOR_MAX_ADC;
+	if (estado_motor == ATIVO)
+	{
+		porcentagem = adc_read() / (float)VALOR_MAX_ADC;
+	}
+	else if (estado_motor == DESATIVANDO)
+	{
+		porcentagem = porcentagem < 0.1 ? 0 : (porcentagem - 0.1);
+	}
+	else if (estado_motor == ATIVANDO)
+	{
+		porcentagem = porcentagem > porcentagem_final ? porcentagem_final : (porcentagem + 0.1);
+	}
+
 	pwm();
 }
 
 // funcao que ira configurar o pwm
-void ativa_motor_potenciometro(void)
+void atualiza_motor_potenciometro(void)
 {
 	// TODO
 }
@@ -111,9 +133,9 @@ void Timer2A_Handler(void)
 {
 	TIMER2_ICR_R = 0x1; // limpa flag de interrupcao
 
-	if (estado_motor == ATIVO)
+	if (estado_motor == ATIVO || estado_motor == DESATIVANDO || estado_motor == ATIVANDO)
 	{
-		ativa_motor();
+		atualiza_motor();
 	}
 }
 
@@ -150,7 +172,7 @@ void Timer1A_Handler(void)
 	TIMER1_ICR_R = 0x1; // limpa flag de interrupcao
 
 	// Calcula prox valor do pwm e comuta os sinal para geracao da onda
-	if (estado_motor == ATIVO)
+	if (estado_motor == ATIVO || estado_motor == DESATIVANDO || estado_motor == ATIVANDO)
 	{
 		pwm();
 	}

@@ -16,7 +16,7 @@ void SysTick_Wait1ms(uint32_t delay);
 void SysTick_Wait1us(uint32_t delay);
 
 int modo_entrada = TECLADO;
-int sentido = ESQUERDA;
+int sentido = DIREITA;
 int estado_motor = INATIVO;
 
 int main(void)
@@ -32,10 +32,15 @@ int main(void)
 reset_sentido_motor:
 
 	// TODO : Captura o sentido de rotacao
+
+	para_motor();
+
 	ativa_motor();
 
 	while (1)
 	{
+		SysTick_Wait1ms(5000);
+		para_motor();
 		// if(/*alterar sentido de rot ?*/)
 		// {
 		// 	para_motor();

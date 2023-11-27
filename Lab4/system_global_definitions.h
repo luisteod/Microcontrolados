@@ -5,5 +5,7 @@
 
 #define INATIVO 0
 #define ATIVO 1
+#define DESATIVANDO 2
+#define ATIVANDO 3
 
 #endif
