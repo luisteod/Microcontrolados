@@ -15,9 +15,12 @@
 
 #define TIMER_1 (0x1 << 1)
 
+#define porcent_conv_pot_dir(x) ((x - 0.5) * 2)
+#define porcent_conv_pot_esq(x) ((0.5 - x) * 2)
+
 int volatile estado_pwm = 0;
 float volatile porcentagem = 0;
-float porcentagem_final = 0;
+float porcentagem_inicial = 0;
 
 extern int estado_motor;
 extern int modo_entrada;
@@ -48,8 +51,10 @@ void inicia_motor(void)
 void ativa_motor(void)
 {
 	estado_motor = ATIVANDO;
-	porcentagem_final = adc_read() / (float)VALOR_MAX_ADC;
-	while (porcentagem != porcentagem_final)
+
+	porcentagem_inicial = adc_read() / (float)VALOR_MAX_ADC;
+
+	while (porcentagem != porcentagem_inicial)
 		;
 	estado_motor = ATIVO;
 }
@@ -87,16 +92,52 @@ void atualiza_motor_teclado(void)
 	}
 	else if (estado_motor == ATIVANDO)
 	{
-		porcentagem = porcentagem > porcentagem_final ? porcentagem_final : (porcentagem + 0.1);
+		porcentagem = porcentagem > porcentagem_inicial ? porcentagem_inicial : (porcentagem + 0.1);
 	}
-
-	pwm();
 }
 
 // funcao que ira configurar o pwm
 void atualiza_motor_potenciometro(void)
 {
-	// TODO
+	static float porcentagem_pot = 0.5;
+
+	if (estado_motor == ATIVO)
+	{
+		float porcentagem_aux = adc_read() / (float)VALOR_MAX_ADC;
+
+		sentido = porcentagem_aux > 0.5 ? DIREITA : ESQUERDA;
+
+		if (sentido == DIREITA)
+		{
+			porcentagem = porcent_conv_pot_dir(porcentagem_aux);
+		}
+		else if (sentido == ESQUERDA)
+		{
+			porcentagem = porcent_conv_pot_esq(porcentagem_aux);
+		}
+	}
+	else if (estado_motor == ATIVANDO)
+	{
+
+		sentido = porcentagem_inicial > 0.5 ? DIREITA : ESQUERDA;
+
+		if (sentido == DIREITA)
+		{
+			porcentagem_pot = porcent_conv_pot_dir(porcentagem_pot) > porcent_conv_pot_dir(porcentagem_inicial)
+								  ? porcentagem_inicial
+								  : (porcentagem_pot + 0.1);
+
+			porcentagem = porcent_conv_pot_dir(porcentagem_pot);
+		}
+		else if (sentido == ESQUERDA)
+		{
+			porcentagem_pot = porcent_conv_pot_esq(porcentagem_pot) < porcent_conv_pot_esq(porcentagem_inicial)
+								  ? porcentagem_inicial
+								  : (porcentagem_pot - 0.1);
+								  
+			porcentagem = porcent_conv_pot_esq(porcentagem_pot);
+		}
+	}
 }
 
 // Cria um timer periodico de 200ms
@@ -136,6 +177,7 @@ void Timer2A_Handler(void)
 	if (estado_motor == ATIVO || estado_motor == DESATIVANDO || estado_motor == ATIVANDO)
 	{
 		atualiza_motor();
+		pwm();
 	}
 }
 

@@ -15,7 +15,7 @@ void SysTick_Init(void);
 void SysTick_Wait1ms(uint32_t delay);
 void SysTick_Wait1us(uint32_t delay);
 
-int modo_entrada = TECLADO;
+int modo_entrada = POTENCIOMETRO;
 int sentido = DIREITA;
 int estado_motor = INATIVO;
 
@@ -32,6 +32,7 @@ int main(void)
 reset_sentido_motor:
 
 	// TODO : Captura o sentido de rotacao
+	//sentido = !sentido;
 
 	para_motor();
 
@@ -39,8 +40,10 @@ reset_sentido_motor:
 
 	while (1)
 	{
-		SysTick_Wait1ms(5000);
-		para_motor();
+		//SysTick_Wait1ms(5000);
+		//para_motor();
+		// reset_sentido_motor;
+
 		// if(/*alterar sentido de rot ?*/)
 		// {
 		// 	para_motor();
