@@ -20,7 +20,7 @@ int modo_entrada = TECLADO;
 int sentido = DIREITA;
 int estado_motor = INATIVO;
 int velocidade = 0; //de 0 a 100
-
+char velocidade_str[17];
 int estado_usuario = USUARIO_INICIO;
 
 int main(void)
@@ -88,7 +88,7 @@ reinicia_sistema:
 	}
 	ativa_motor();
 
-	while (estado_usuario == USUARIO_FEEDBACK_POT || estado_usuario == USUARIO_FEEDBACK_TECLADO)
+	while ((estado_usuario == USUARIO_FEEDBACK_POT || estado_usuario == USUARIO_FEEDBACK_TECLADO) && estado_usuario != USUARIO_FIM)
 	{
 		switch (estado_usuario)
 		{
@@ -96,13 +96,13 @@ reinicia_sistema:
 				if (keyboard_read() == '*')
 						estado_usuario = USUARIO_FIM;
 				velocidade = get_porcentagem();
-				if (velocidade > 50)
+				if (sentido == DIREITA)
 					LCD_writeStringUpper("Horario");
-				else if (velocidade < 50)
+				else if (sentido == ESQUERDA)
 					LCD_writeStringUpper("Anti-horario");
 				else
 					LCD_writeStringUpper("Parado");
-				char velocidade_str[17];
+
 				velocidade_str[0] = 'V';
 				velocidade_str[1] = 'e';
 				velocidade_str[2] = 'l';
@@ -120,21 +120,41 @@ reinicia_sistema:
 				velocidade_str[14] = (velocidade % 10) + 0x30;
 				velocidade_str[15] = '\0';
 				
-				LCD_writeStringLower("Velocidade:");
 				LCD_writeStringLower(velocidade_str);
-				SysTick_Wait1ms(1000);
+				SysTick_Wait1ms(100);
 				
 				break;
 			case USUARIO_FEEDBACK_TECLADO:
 					if (sentido == DIREITA)
-						LCD_writeStringUpper("SENTIDO: HORARIO");
+						LCD_writeStringUpper("Sentido = H");
 					else
-						LCD_writeStringUpper("SENTIDO: ANTIHORARIO");
-		
-					LCD_writeStringLower("VELOCIDADE:");
+						LCD_writeStringUpper("Sentido = AH");
+					
+					velocidade = get_porcentagem();
+					velocidade_str[0] = 'V';
+					velocidade_str[1] = 'e';
+					velocidade_str[2] = 'l';
+					velocidade_str[3] = 'o';
+					velocidade_str[4] = 'c';
+					velocidade_str[5] = 'i';
+					velocidade_str[6] = 'd';
+					velocidade_str[7] = 'a';
+					velocidade_str[8] = 'd';
+					velocidade_str[9] = 'e';
+					velocidade_str[10] = ':';
+					velocidade_str[11] = ' ';
+					velocidade_str[12] = (velocidade / 100) + 0x30;
+					velocidade_str[13] = ((velocidade % 100) / 10) + 0x30;
+					velocidade_str[14] = (velocidade % 10) + 0x30;
+					velocidade_str[15] = '\0';
+					
+					LCD_writeStringLower("Velocidade:");
+					LCD_writeStringLower(velocidade_str);
 					
 					if (keyboard_read() == '9')
-						sentido = !sentido;
+						troca_sentido();
+						
+
 					else if (keyboard_read() == '*')
 						estado_usuario = USUARIO_FIM;
 					

@@ -295,3 +295,10 @@ void dispara_timer_1A(int valor)
 
 	TIMER1_CTL_R = TIMER1_CTL_R | 0x1; // habilita timer 1A
 }
+
+void troca_sentido(void)
+{
+	para_motor();
+	sentido = !sentido;
+	ativa_motor();
+}

@@ -10,5 +10,6 @@ void inicia_motor(void);;
 void ativa_motor(void);
 void para_motor(void);
 int get_porcentagem(void);
+void troca_sentido(void);
 
 #endif
