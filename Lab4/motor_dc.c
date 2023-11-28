@@ -98,10 +98,11 @@ void atualiza_motor_teclado(void)
 	else if (estado_motor == ATIVANDO)
 	{
 		porcentagem = porcentagem > porcentagem_inicial ? porcentagem_inicial : (porcentagem + 0.1);
+		
+		if(porcentagem == porcentagem_inicial)
+			estado_motor = ATIVO;
 	}
 
-	if(porcentagem == porcentagem_inicial)
-		estado_motor = ATIVO;
 
 
 }
