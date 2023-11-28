@@ -18,6 +18,8 @@
 #define porcent_conv_pot_dir(x) ((x - 0.5) * 2)
 #define porcent_conv_pot_esq(x) ((0.5 - x) * 2)
 
+#define INCREMENTO 0.1
+
 int volatile estado_pwm = 0;
 float volatile porcentagem = 0;
 float porcentagem_inicial = 0;
@@ -89,7 +91,7 @@ void atualiza_motor_teclado(void)
 	}
 	else if (estado_motor == DESATIVANDO)
 	{
-		porcentagem = porcentagem < 0.1 ? 0 : (porcentagem - 0.1);
+		porcentagem = porcentagem < INCREMENTO ? 0 : (porcentagem - INCREMENTO);
 		if (porcentagem == 0)
 		{
 			estado_motor = INATIVO;
@@ -97,7 +99,7 @@ void atualiza_motor_teclado(void)
 	}
 	else if (estado_motor == ATIVANDO)
 	{
-		porcentagem = porcentagem > porcentagem_inicial ? porcentagem_inicial : (porcentagem + 0.1);
+		porcentagem = (porcentagem + INCREMENTO) > porcentagem_inicial ? porcentagem_inicial : (porcentagem + INCREMENTO);
 	}
 
 	if(porcentagem == porcentagem_inicial)
@@ -134,7 +136,7 @@ void atualiza_motor_potenciometro(void)
 		{
 			porcentagem_pot = porcent_conv_pot_dir(porcentagem_pot) > porcent_conv_pot_dir(porcentagem_inicial)
 								  ? porcentagem_inicial
-								  : (porcentagem_pot + 0.1);
+								  : (porcentagem_pot + INCREMENTO);
 
 			porcentagem = porcent_conv_pot_dir(porcentagem_pot);
 		}
@@ -142,7 +144,7 @@ void atualiza_motor_potenciometro(void)
 		{
 			porcentagem_pot = porcent_conv_pot_esq(porcentagem_pot) > porcent_conv_pot_esq(porcentagem_inicial)
 								  ? porcentagem_inicial
-								  : (porcentagem_pot - 0.1);
+								  : (porcentagem_pot - INCREMENTO);
 
 			porcentagem = porcent_conv_pot_esq(porcentagem_pot);
 		}
@@ -154,7 +156,7 @@ void atualiza_motor_potenciometro(void)
 	}
 	else if (estado_motor == DESATIVANDO)
 	{
-		porcentagem = porcentagem < 0.1 ? 0 : (porcentagem - 0.1);
+		porcentagem = porcentagem < INCREMENTO ? 0 : (porcentagem - INCREMENTO);
 
 		if (porcentagem == 0)
 		{
