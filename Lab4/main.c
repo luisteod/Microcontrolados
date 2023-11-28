@@ -8,16 +8,20 @@
 #include "gpio.h"
 #include "adc.h"
 #include "motor_dc.h"
+#include "lcd.h"
+#include "teclado.h"
 #include "system_global_definitions.h"
 
 void PLL_Init(void);
 void SysTick_Init(void);
 void SysTick_Wait1ms(uint32_t delay);
-void SysTick_Wait1us(uint32_t delay);
 
-int modo_entrada = POTENCIOMETRO;
+int modo_entrada = TECLADO;
 int sentido = DIREITA;
 int estado_motor = INATIVO;
+int velocidade = 0; //de 0 a 100
+
+int estado_usuario = USUARIO_INICIO;
 
 int main(void)
 {
@@ -26,24 +30,121 @@ int main(void)
 	GPIO_Init();
 	adc_init();
 	inicia_motor();
+	LCD_Init();
 
+	
+reinicia_sistema:
+	estado_usuario = USUARIO_INICIO;
+	LCD_writeStringUpper("Motor Parado!");
+	LCD_writeStringLower("* para iniciar");
 	// TODO : Captura o se teclado ou potenciometro
 
-reset_sentido_motor:
+	while (estado_usuario < USUARIO_FEEDBACK_POT)
+	{	
+		switch (estado_usuario)
+		{
+			case USUARIO_INICIO:
+				if(keyboard_read() == '*')
+				{
+					LCD_writeStringUpper("1. Potenciometro");
+					LCD_writeStringLower("2. Teclado");
+					estado_usuario = USUARIO_ESCOLHA_MODO;
+				}
+				break;
+			case USUARIO_ESCOLHA_MODO:
+				if(keyboard_read() == '1')
+				{
+					modo_entrada = POTENCIOMETRO;
+					estado_usuario = USUARIO_FEEDBACK_POT;
+					break;
+				}
+				else if(keyboard_read() == '2')
+				{
+					modo_entrada = TECLADO;
+					LCD_writeStringUpper("Sentido desejado:");
+					LCD_writeStringLower("1 H, 2 AH");
+					estado_usuario = USUARIO_SENTIDO;
+				}
+				break;
+			case USUARIO_SENTIDO:
+				if(keyboard_read() == '1')
+				{
+					sentido = DIREITA;
+					estado_usuario = USUARIO_FEEDBACK_TECLADO;
+					break;
+				}
+				else if(keyboard_read() == '2')
+				{
+					sentido = ESQUERDA;
+					estado_usuario = USUARIO_FEEDBACK_TECLADO;
+					break;
+				}
+				break;
+				default:
+					break;
 
-	// TODO : Captura o sentido de rotacao SE TECLADO
-
-	para_motor();
+		}
+		
+	}
 	ativa_motor();
 
-	while (1)
+	while (estado_usuario == USUARIO_FEEDBACK_POT || estado_usuario == USUARIO_FEEDBACK_TECLADO)
 	{
-		/*CODIGO ABAIXO APENAS TESTE*/
-		SysTick_Wait1ms(5000);
-		para_motor();
-    
-
-		// TODO : Metodo que executa a linha abaixo caso queira alterar o metodo : Teclado ou potenciometro
-		goto reset_sentido_motor;
+		switch (estado_usuario)
+		{
+			case USUARIO_FEEDBACK_POT:
+				if (keyboard_read() == '*')
+						estado_usuario = USUARIO_FIM;
+				velocidade = get_porcentagem();
+				if (velocidade > 50)
+					LCD_writeStringUpper("Horario");
+				else if (velocidade < 50)
+					LCD_writeStringUpper("Anti-horario");
+				else
+					LCD_writeStringUpper("Parado");
+				char velocidade_str[17];
+				velocidade_str[0] = 'V';
+				velocidade_str[1] = 'e';
+				velocidade_str[2] = 'l';
+				velocidade_str[3] = 'o';
+				velocidade_str[4] = 'c';
+				velocidade_str[5] = 'i';
+				velocidade_str[6] = 'd';
+				velocidade_str[7] = 'a';
+				velocidade_str[8] = 'd';
+				velocidade_str[9] = 'e';
+				velocidade_str[10] = ':';
+				velocidade_str[11] = ' ';
+				velocidade_str[12] = (velocidade / 100) + 0x30;
+				velocidade_str[13] = ((velocidade % 100) / 10) + 0x30;
+				velocidade_str[14] = (velocidade % 10) + 0x30;
+				velocidade_str[15] = '\0';
+				
+				LCD_writeStringLower("Velocidade:");
+				LCD_writeStringLower(velocidade_str);
+				SysTick_Wait1ms(1000);
+				
+				break;
+			case USUARIO_FEEDBACK_TECLADO:
+					if (sentido == DIREITA)
+						LCD_writeStringUpper("SENTIDO: HORARIO");
+					else
+						LCD_writeStringUpper("SENTIDO: ANTIHORARIO");
+		
+					LCD_writeStringLower("VELOCIDADE:");
+					
+					if (keyboard_read() == '9')
+						sentido = !sentido;
+					else if (keyboard_read() == '*')
+						estado_usuario = USUARIO_FIM;
+					
+			default:
+					LCD_writeStringUpper("VINICIUS KAMIYA");
+					LCD_writeStringLower("LUIS HENRIQUE");
+				break;
+		}		
 	}
+	para_motor();
+	goto reinicia_sistema;
+		
 }

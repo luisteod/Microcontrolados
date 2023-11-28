@@ -164,6 +164,11 @@ void atualiza_motor_potenciometro(void)
 	}
 }
 
+int get_porcentagem(void)
+{
+	return porcentagem*100;
+}
+
 // Cria um timer periodico de 200ms
 void Timer2A_Init(void)
 {

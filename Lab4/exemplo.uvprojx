@@ -382,77 +382,13 @@
       </TargetOption>
       <Groups>
         <Group>
-          <GroupName>Source Group 1</GroupName>
-          <GroupOption>
-            <CommonProperty>
-              <UseCPPCompiler>0</UseCPPCompiler>
-              <RVCTCodeConst>0</RVCTCodeConst>
-              <RVCTZI>0</RVCTZI>
-              <RVCTOtherData>0</RVCTOtherData>
-              <ModuleSelection>0</ModuleSelection>
-              <IncludeInBuild>2</IncludeInBuild>
-              <AlwaysBuild>2</AlwaysBuild>
-              <GenerateAssemblyFile>2</GenerateAssemblyFile>
-              <AssembleAssemblyFile>2</AssembleAssemblyFile>
-              <PublicsOnly>2</PublicsOnly>
-              <StopOnExitCode>11</StopOnExitCode>
-              <CustomArgument></CustomArgument>
-              <IncludeLibraryModules></IncludeLibraryModules>
-              <ComprImg>1</ComprImg>
-            </CommonProperty>
-            <GroupArmAds>
-              <Cads>
-                <interw>2</interw>
-                <Optim>1</Optim>
-                <oTime>2</oTime>
-                <SplitLS>2</SplitLS>
-                <OneElfS>2</OneElfS>
-                <Strict>2</Strict>
-                <EnumInt>2</EnumInt>
-                <PlainCh>2</PlainCh>
-                <Ropi>2</Ropi>
-                <Rwpi>2</Rwpi>
-                <wLevel>0</wLevel>
-                <uThumb>2</uThumb>
-                <uSurpInc>2</uSurpInc>
-                <uC99>2</uC99>
-                <uGnu>2</uGnu>
-                <useXO>2</useXO>
-                <v6Lang>0</v6Lang>
-                <v6LangP>0</v6LangP>
-                <vShortEn>2</vShortEn>
-                <vShortWch>2</vShortWch>
-                <v6Lto>2</v6Lto>
-                <v6WtE>2</v6WtE>
-                <v6Rtti>2</v6Rtti>
-                <VariousControls>
-                  <MiscControls></MiscControls>
-                  <Define></Define>
-                  <Undefine></Undefine>
-                  <IncludePath></IncludePath>
-                </VariousControls>
-              </Cads>
-              <Aads>
-                <interw>2</interw>
-                <Ropi>2</Ropi>
-                <Rwpi>2</Rwpi>
-                <thumb>2</thumb>
-                <SplitLS>2</SplitLS>
-                <SwStkChk>2</SwStkChk>
-                <NoWarn>2</NoWarn>
-                <uSurpInc>2</uSurpInc>
-                <useXO>2</useXO>
-                <ClangAsOpt>0</ClangAsOpt>
-                <VariousControls>
-                  <MiscControls></MiscControls>
-                  <Define></Define>
-                  <Undefine></Undefine>
-                  <IncludePath></IncludePath>
-                </VariousControls>
-              </Aads>
-            </GroupArmAds>
-          </GroupOption>
+          <GroupName>New Group</GroupName>
           <Files>
+            <File>
+              <FileName>teclado.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\teclado.c</FilePath>
+            </File>
             <File>
               <FileName>startup.s</FileName>
               <FileType>2</FileType>
@@ -464,14 +400,9 @@
               <FilePath>.\utils.s</FilePath>
             </File>
             <File>
-              <FileName>main.c</FileName>
+              <FileName>adc.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\main.c</FilePath>
-            </File>
-            <File>
-              <FileName>tm4c1294ncpdt.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\tm4c1294ncpdt.h</FilePath>
+              <FilePath>.\adc.c</FilePath>
             </File>
             <File>
               <FileName>gpio.c</FileName>
@@ -479,14 +410,14 @@
               <FilePath>.\gpio.c</FilePath>
             </File>
             <File>
-              <FileName>adc.c</FileName>
+              <FileName>lcd.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\adc.c</FilePath>
+              <FilePath>.\lcd.c</FilePath>
             </File>
             <File>
-              <FileName>adc.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\adc.h</FilePath>
+              <FileName>main.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\main.c</FilePath>
             </File>
             <File>
               <FileName>motor.c</FileName>
@@ -494,9 +425,9 @@
               <FilePath>.\motor.c</FilePath>
             </File>
             <File>
-              <FileName>motor.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\motor.h</FilePath>
+              <FileName>motor_dc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\motor_dc.c</FilePath>
             </File>
             <File>
               <FileName>uart.c</FileName>
@@ -504,9 +435,9 @@
               <FilePath>.\uart.c</FilePath>
             </File>
             <File>
-              <FileName>uart.h</FileName>
+              <FileName>adc.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\uart.h</FilePath>
+              <FilePath>.\adc.h</FilePath>
             </File>
             <File>
               <FileName>gpio.h</FileName>
@@ -514,9 +445,14 @@
               <FilePath>.\gpio.h</FilePath>
             </File>
             <File>
-              <FileName>motor_dc.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\motor_dc.c</FilePath>
+              <FileName>lcd.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\lcd.h</FilePath>
+            </File>
+            <File>
+              <FileName>motor.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\motor.h</FilePath>
             </File>
             <File>
               <FileName>motor_dc.h</FileName>
@@ -527,6 +463,21 @@
               <FileName>system_global_definitions.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\system_global_definitions.h</FilePath>
+            </File>
+            <File>
+              <FileName>teclado.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\teclado.h</FilePath>
+            </File>
+            <File>
+              <FileName>tm4c1294ncpdt.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\tm4c1294ncpdt.h</FilePath>
+            </File>
+            <File>
+              <FileName>uart.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\uart.h</FilePath>
             </File>
           </Files>
         </Group>

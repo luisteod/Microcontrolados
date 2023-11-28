@@ -10,8 +10,9 @@
 #define GPIO_PORTA (0x1) // bit 0
 #define GPIO_PORTQ (0x1 << 14)
 #define GPIO_PORTP (0X1 << 13)
-
-
+#define GPIO_PORTL (0X1 << 10)
+#define GPIO_PORTM (0X1 << 11)
+#define GPIO_PORTK (0X1 << 9)
 
 void GPIOPortJ_Handler(void);
 extern int is_rotate_canc;
@@ -26,13 +27,46 @@ extern int is_motor_active;
 void GPIO_Init(void)
 {
 	// 1a. Ativar o clock para a porta setando o bit correspondente no registrador RCGCGPIO
-	SYSCTL_RCGCGPIO_R = (GPIO_PORTE | GPIO_PORTF | GPIO_PORTH | GPIO_PORTN | GPIO_PORTA | GPIO_PORTJ | GPIO_PORTQ | GPIO_PORTP);
+	SYSCTL_RCGCGPIO_R = (GPIO_PORTE | GPIO_PORTF | GPIO_PORTH | GPIO_PORTN | GPIO_PORTA | GPIO_PORTJ | GPIO_PORTQ | GPIO_PORTP | GPIO_PORTL | GPIO_PORTM | GPIO_PORTK);
 	// 1b.   ap�s isso verificar no PRGPIO se a porta est� pronta para uso.
-	while ((SYSCTL_PRGPIO_R & (GPIO_PORTE | GPIO_PORTF | GPIO_PORTH | GPIO_PORTN | GPIO_PORTA | GPIO_PORTJ | GPIO_PORTQ | GPIO_PORTP)) !=
-		   (GPIO_PORTE | GPIO_PORTF | GPIO_PORTH | GPIO_PORTN | GPIO_PORTA | GPIO_PORTJ | GPIO_PORTQ | GPIO_PORTP))
+	while ((SYSCTL_PRGPIO_R & (GPIO_PORTE | GPIO_PORTF | GPIO_PORTH | GPIO_PORTN | GPIO_PORTA | GPIO_PORTJ | GPIO_PORTQ | GPIO_PORTP | GPIO_PORTL | GPIO_PORTM | GPIO_PORTK)) !=
+		   (GPIO_PORTE | GPIO_PORTF | GPIO_PORTH | GPIO_PORTN | GPIO_PORTA | GPIO_PORTJ | GPIO_PORTQ | GPIO_PORTP | GPIO_PORTL | GPIO_PORTM | GPIO_PORTK))
 	{
 	};
 
+
+	//teclado e LCD
+	// 2. Limpar o AMSEL para desabilitar a analógica
+    GPIO_PORTL_AMSEL_R = 0x00;
+    GPIO_PORTM_AMSEL_R = 0x00;
+	GPIO_PORTK_AMSEL_R = 0x00;
+
+    // 3. Limpar PCTL para selecionar o GPIO
+    GPIO_PORTL_PCTL_R = 0x00;
+    GPIO_PORTM_PCTL_R = 0x00;
+    GPIO_PORTK_PCTL_R = 0x00;
+
+    // 4. DIR para 0 se for entrada, 1 se for saída
+    GPIO_PORTL_DIR_R = 0x00; // Bit0-3
+    GPIO_PORTM_DIR_R = 0x07; // Bit0-2
+    GPIO_PORTK_DIR_R = 0xFF; // Bit0-7
+
+
+    // 5. Limpar os bits AFSEL para 0 para selecionar GPIO sem função alternativa
+    GPIO_PORTL_AFSEL_R = 0x00;
+    GPIO_PORTM_AFSEL_R = 0x00;
+		GPIO_PORTK_AFSEL_R = 0x00;
+	
+    // 6. Setar os bits de DEN para habilitar I/O digital
+    GPIO_PORTL_DEN_R = 0x0F; // Bit0-3
+    GPIO_PORTM_DEN_R = 0xFF; // Bit0-2
+		GPIO_PORTK_DEN_R = 0xFF; // Bit0-7
+
+    // 7. Setar os bits PUR para habilitar o pull-up
+    GPIO_PORTL_PUR_R = 0x0F; // Bit0-3
+
+
+	//RESTO
 	// 2. Limpar o AMSEL para desabilitar a anal�gica
 	GPIO_PORTA_AHB_AMSEL_R = 0x00;
 	GPIO_PORTQ_AMSEL_R = 0x00;
@@ -110,6 +144,23 @@ void PortH_Output(uint32_t graus)
 	// agora vamos fazer o OR com o valor recebido na fun��o
 	temp = temp | graus;
 	GPIO_PORTH_AHB_DATA_R = temp;
+}
+
+uint8_t PortL_Input(void){
+    return GPIO_PORTL_DATA_R; // Bits 0-3
+}
+
+void PortM_Output_teclado(uint32_t valor){
+    uint32_t temp;
+		
+    //vamos zerar somente os bits menos significativos
+    //para uma escrita amig�vel nos bits 0-2
+    temp = GPIO_PORTM_DIR_R & 0x07;
+    //agora vamos fazer o OR com o valor recebido na fun��o
+    temp = temp | valor;
+    GPIO_PORTM_DIR_R = temp; 
+		GPIO_PORTM_DATA_R = 0x00;
+		
 }
 
 //void GPIOPortJ_Handler(void)
