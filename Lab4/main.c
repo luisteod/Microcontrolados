@@ -63,6 +63,7 @@ reinicia_sistema:
 					modo_entrada = TECLADO;
 					LCD_writeStringUpper("Sentido desejado:");
 					LCD_writeStringLower("1 H, 2 AH");
+					SysTick_Wait1ms(100);
 					estado_usuario = USUARIO_SENTIDO;
 				}
 				break;
@@ -152,9 +153,7 @@ reinicia_sistema:
 					LCD_writeStringLower(velocidade_str);
 					
 					if (keyboard_read() == '9')
-						troca_sentido();
-						
-
+						troca_sentido();						
 					else if (keyboard_read() == '*')
 						estado_usuario = USUARIO_FIM;
 					

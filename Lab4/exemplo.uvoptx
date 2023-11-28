@@ -187,17 +187,17 @@
         <Ww>
           <count>7</count>
           <WinNumber>1</WinNumber>
-          <ItemText>estado_usuario</ItemText>
+          <ItemText>estado_usuario,0x0A</ItemText>
         </Ww>
         <Ww>
           <count>8</count>
           <WinNumber>1</WinNumber>
-          <ItemText>velocidade</ItemText>
+          <ItemText>velocidade,0x0A</ItemText>
         </Ww>
         <Ww>
           <count>9</count>
           <WinNumber>1</WinNumber>
-          <ItemText>modo_entrada</ItemText>
+          <ItemText>modo_entrada,0x0A</ItemText>
         </Ww>
         <Ww>
           <count>10</count>
